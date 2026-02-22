@@ -569,9 +569,14 @@ export const chooseInWith = (pat, xs) => {
  */
 export const choose = (...xs) => chooseWith(rand, xs);
 
-// todo: doc
+/**
+ * Has no difference with `choose`
+ * 
+ * @name chooseIn
+ * @deprecated
+ * @returns {Pattern}
+ */
 export const chooseIn = (...xs) => chooseInWith(rand, xs);
-export const chooseOut = choose;
 
 /**
  * Chooses from the given list of values (or patterns of values), according
