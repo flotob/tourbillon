@@ -1156,12 +1156,61 @@ const COMPOSERS = {
    * @tags math
    */
   div: [numeralArgs((a, b) => a / b)],
+  /**
+   *
+   * Divides each number by the given factor.
+   * @name div
+   * @memberof Pattern
+   * @tags math
+   */
   mod: [numeralArgs(_mod)],
+  /**
+   *
+   * Raises each number to the power of the given factor
+   * @name pow
+   * @memberof Pattern
+   * @tags math
+   */
   pow: [numeralArgs(Math.pow)],
+  /**
+   *
+   * Preforms a bitwise `and` on each number and the given factor
+   * @name band
+   * @memberof Pattern
+   * @tags math
+   */
   band: [numeralArgs((a, b) => a & b)],
+  /**
+   *
+   * Preforms a bitwise `or` on each number and the given factor
+   * @name bor
+   * @memberof Pattern
+   * @tags math
+   */
   bor: [numeralArgs((a, b) => a | b)],
+  /**
+   *
+   * Preforms a bitwise `xor` on each number and the given factor
+   * @name bxor
+   * @memberof Pattern
+   * @tags math
+   */
   bxor: [numeralArgs((a, b) => a ^ b)],
+  /**
+   *
+   * Preforms a bitwise `left shift` on each number by the given factor
+   * @name blshift
+   * @memberof Pattern
+   * @tags math
+   */
   blshift: [numeralArgs((a, b) => a << b)],
+  /**
+   *
+   * Preforms a bitwise `right shift` on each number by the given factor
+   * @name brshift
+   * @memberof Pattern
+   * @tags math
+   */
   brshift: [numeralArgs((a, b) => a >> b)],
 
   // TODO - force numerical comparison if both look like numbers?
