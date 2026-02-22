@@ -8,12 +8,19 @@
   ],
   "/packages/codemirror/autocomplete.mjs": [
     "Autocomplete",
+    "bankCompletions",
+    "getSynonymDoc",
     "strudelAutocomplete",
     "isAutoCompletionEnabled"
   ],
-  "/packages/codemirror/tooltip.mjs": [
-    "strudelTooltip",
-    "isTooltipEnabled"
+  "/packages/codemirror/basicSetup.mjs": [
+    "basicSetup",
+    "minimalSetup"
+  ],
+  "/packages/codemirror/block_utilities.mjs": [
+    "getBlockRegions",
+    "getBlockAt",
+    "evalBlock"
   ],
   "/packages/codemirror/flash.mjs": [
     "setFlash",
@@ -24,15 +31,29 @@
   "/packages/codemirror/highlight.mjs": [
     "setMiniLocations",
     "showMiniLocations",
+    "displayMiniLocations",
     "updateMiniLocations",
     "highlightMiniLocations",
+    "getMiniLocations",
+    "getActiveMiniLocations",
     "highlightExtension",
     "isPatternHighlightingEnabled"
   ],
   "/packages/codemirror/keybindings.mjs": [
     "keybindings"
   ],
-  "/packages/codemirror/themes/strudel-theme.mjs": [],
+  "/packages/codemirror/labelJump.mjs": [
+    "jumpToCharacter"
+  ],
+  "/packages/codemirror/slider.mjs": [
+    "acorn parse error: SyntaxError: undefined"
+  ],
+  "/packages/codemirror/themes/theme-helper.mjs": [
+    "createTheme"
+  ],
+  "/packages/codemirror/themes/strudel-theme.mjs": [
+    "settings"
+  ],
   "/packages/codemirror/themes/bluescreen.mjs": [
     "settings"
   ],
@@ -48,7 +69,103 @@
   "/packages/codemirror/themes/algoboy.mjs": [
     "settings"
   ],
-  "/packages/codemirror/themes/terminal.mjs": [
+  "/packages/codemirror/themes/CutiePi.mjs": [
+    "settings"
+  ],
+  "/packages/codemirror/themes/sonic-pink.mjs": [
+    "settings"
+  ],
+  "/packages/codemirror/themes/red-text.mjs": [
+    "settings"
+  ],
+  "/packages/codemirror/themes/green-text.mjs": [
+    "settings"
+  ],
+  "/packages/codemirror/themes/archBtw.mjs": [
+    "settings"
+  ],
+  "/packages/codemirror/themes/fruitDaw.mjs": [
+    "settings"
+  ],
+  "/packages/codemirror/themes/bluescreenlight.mjs": [
+    "settings"
+  ],
+  "/packages/codemirror/themes/androidstudio.mjs": [
+    "settings"
+  ],
+  "/packages/codemirror/themes/atomone.mjs": [
+    "settings"
+  ],
+  "/packages/codemirror/themes/aura.mjs": [
+    "settings"
+  ],
+  "/packages/codemirror/themes/darcula.mjs": [
+    "settings"
+  ],
+  "/packages/codemirror/themes/dracula.mjs": [
+    "settings"
+  ],
+  "/packages/codemirror/themes/duotoneDark.mjs": [
+    "settings"
+  ],
+  "/packages/codemirror/themes/eclipse.mjs": [
+    "settings"
+  ],
+  "/packages/codemirror/themes/githubDark.mjs": [
+    "settings"
+  ],
+  "/packages/codemirror/themes/githubLight.mjs": [
+    "settings"
+  ],
+  "/packages/codemirror/themes/gruvboxDark.mjs": [
+    "settings"
+  ],
+  "/packages/codemirror/themes/gruvboxLight.mjs": [
+    "settings"
+  ],
+  "/packages/codemirror/themes/materialDark.mjs": [
+    "settings"
+  ],
+  "/packages/codemirror/themes/materialLight.mjs": [
+    "settings"
+  ],
+  "/packages/codemirror/themes/nord.mjs": [
+    "settings"
+  ],
+  "/packages/codemirror/themes/monokai.mjs": [
+    "settings"
+  ],
+  "/packages/codemirror/themes/solarizedDark.mjs": [
+    "settings"
+  ],
+  "/packages/codemirror/themes/solarizedLight.mjs": [
+    "settings"
+  ],
+  "/packages/codemirror/themes/sublime.mjs": [
+    "settings"
+  ],
+  "/packages/codemirror/themes/tokyoNight.mjs": [
+    "settings"
+  ],
+  "/packages/codemirror/themes/tokioNightStorm.mjs": [
+    "settings"
+  ],
+  "/packages/codemirror/themes/tokyoNightDay.mjs": [
+    "settings"
+  ],
+  "/packages/codemirror/themes/vscodeDark.mjs": [
+    "settings"
+  ],
+  "/packages/codemirror/themes/vscodeLight.mjs": [
+    "settings"
+  ],
+  "/packages/codemirror/themes/xcodeLight.mjs": [
+    "settings"
+  ],
+  "/packages/codemirror/themes/bbedit.mjs": [
+    "settings"
+  ],
+  "/packages/codemirror/themes/noctisLilac.mjs": [
     "settings"
   ],
   "/packages/codemirror/themes.mjs": [
@@ -60,50 +177,34 @@
     "initTheme",
     "activateTheme"
   ],
-  "/packages/codemirror/slider.mjs": [
-    "acorn parse error: SyntaxError: undefined"
+  "/packages/codemirror/tooltip.mjs": [
+    "strudelTooltip",
+    "isTooltipEnabled"
   ],
   "/packages/codemirror/widget.mjs": [
-    "addWidget",
-    "updateWidgets",
-    "setWidget",
-    "BlockWidget",
-    "widgetPlugin",
-    "registerWidget"
+    "acorn parse error: SyntaxError: undefined"
   ],
   "/packages/codemirror/codemirror.mjs": [
-    "defaultSettings",
-    "codemirrorSettings",
-    "initEditor",
-    "StrudelMirror"
+    "acorn parse error: SyntaxError: undefined"
   ],
   "/packages/codemirror/index.mjs": [],
-  "/packages/core/fraction.mjs": [
-    "gcd",
-    "lcm"
-  ],
-  "/packages/core/timespan.mjs": [
-    "TimeSpan"
-  ],
-  "/packages/core/hap.mjs": [
-    "Hap"
-  ],
-  "/packages/core/state.mjs": [
-    "State"
-  ],
   "/packages/core/logger.mjs": [
     "logKey",
+    "errorLogger",
     "logger"
   ],
   "/packages/core/util.mjs": [
     "isNoteWithOctave",
     "isNote",
     "tokenizeNote",
+    "getAccidentalsOffset",
     "noteToMidi",
     "midiToFreq",
     "freqToMidi",
     "valueToMidi",
+    "getEventOffsetMs",
     "_mod",
+    "averageArray",
     "nanFallback",
     "getSoundIndex",
     "getPlayableNoteValue",
@@ -122,13 +223,37 @@
     "fractionalArgs",
     "splitAt",
     "zipWith",
+    "pairs",
     "clamp",
     "sol2note",
+    "uniq",
+    "uniqsort",
+    "uniqsortr",
     "unicodeToBase64",
     "base64ToUnicode",
     "code2hash",
     "hash2code",
-    "objectMap"
+    "objectMap",
+    "cycleToSeconds",
+    "ClockCollator",
+    "getPerformanceTimeSeconds",
+    "keyAlias",
+    "getCurrentKeyboardState",
+    "stringifyValues"
+  ],
+  "/packages/core/fraction.mjs": [
+    "gcd",
+    "lcm",
+    "isFraction"
+  ],
+  "/packages/core/timespan.mjs": [
+    "TimeSpan"
+  ],
+  "/packages/core/hap.mjs": [
+    "Hap"
+  ],
+  "/packages/core/state.mjs": [
+    "State"
   ],
   "/packages/core/value.mjs": [
     "unionWithObj",
@@ -137,291 +262,76 @@
     "map"
   ],
   "/packages/core/drawLine.mjs": [],
-  "/packages/core/pattern.mjs": [
-    "setStringParser",
-    "polyrhythm",
-    "pr",
-    "pm",
-    "nothing",
-    "isPattern",
-    "reify",
-    "stackLeft",
-    "stackRight",
-    "stackCentre",
-    "stackBy",
-    "fastcat",
-    "_polymeterListSteps",
-    "set",
-    "keep",
-    "keepif",
-    "mod",
-    "pow",
-    "band",
-    "bor",
-    "bxor",
-    "blshift",
-    "brshift",
-    "lt",
-    "gt",
-    "lte",
-    "gte",
-    "eq",
-    "eqt",
-    "ne",
-    "net",
-    "and",
-    "or",
-    "func",
-    "compressSpan",
-    "compressspan",
-    "fastgap",
-    "focusSpan",
-    "focusspan",
-    "density",
-    "sparsity",
-    "zoomArc",
-    "zoomarc",
-    "inv",
-    "juxby",
-    "echowith",
-    "stutWith",
-    "stutwith",
-    "iterback",
-    "slowchunk",
-    "slowChunk",
-    "chunkback",
-    "fastchunk",
-    "bypass",
-    "hsla",
-    "hsl",
-    "loopat",
-    "loopatcps"
-  ],
-  "/packages/core/controls.mjs": [
-    "createParam",
-    "sound",
-    "src",
-    "att",
-    "fmi",
-    "fmrelease",
-    "fmvelocity",
-    "analyze",
-    "fft",
-    "dec",
-    "sus",
-    "rel",
-    "hold",
-    "bandf",
-    "bp",
-    "bandq",
-    "loopb",
-    "loope",
-    "ch",
-    "phaserrate",
-    "phasr",
-    "ph",
-    "phs",
-    "phc",
-    "phd",
-    "phasdp",
-    "cutoff",
-    "ctf",
-    "lp",
-    "lpe",
-    "hpe",
-    "bpe",
-    "lpa",
-    "hpa",
-    "bpa",
-    "lpd",
-    "hpd",
-    "bpd",
-    "lps",
-    "hps",
-    "bps",
-    "lpr",
-    "hpr",
-    "bpr",
-    "fanchor",
-    "vibrato",
-    "v",
-    "vmod",
-    "hcutoff",
-    "hp",
-    "hresonance",
-    "resonance",
-    "delayfb",
-    "dfb",
-    "delayt",
-    "dt",
-    "lock",
-    "det",
-    "fadeTime",
-    "fadeOutTime",
-    "fadeInTime",
-    "patt",
-    "pdec",
-    "psustain",
-    "psus",
-    "prel",
-    "gate",
-    "gat",
-    "activeLabel",
-    "degree",
-    "mtranspose",
-    "ctranspose",
-    "harmonic",
-    "stepsPerOctave",
-    "octaveR",
-    "nudge",
-    "overgain",
-    "overshape",
-    "panspan",
-    "pansplay",
-    "panwidth",
-    "panorient",
-    "rate",
-    "slide",
-    "semitone",
-    "voice",
-    "chord",
-    "dictionary",
-    "dict",
-    "anchor",
-    "offset",
-    "octaves",
-    "mode",
-    "rlp",
-    "rdim",
-    "rfade",
-    "ir",
-    "size",
-    "sz",
-    "rsize",
-    "dist",
-    "compressorKnee",
-    "compressorRatio",
-    "compressorAttack",
-    "compressorRelease",
-    "waveloss",
-    "density",
-    "expression",
-    "sustainpedal",
-    "tremolodepth",
-    "tremdp",
-    "tremolorate",
-    "tremr",
-    "fshift",
-    "fshiftnote",
-    "fshiftphase",
-    "triode",
-    "krush",
-    "kcutoff",
-    "octer",
-    "octersub",
-    "octersubsub",
-    "ring",
-    "ringf",
-    "ringdf",
-    "freeze",
-    "xsdelay",
-    "tsdelay",
-    "real",
-    "imag",
-    "enhance",
-    "partials",
-    "comb",
-    "smear",
-    "scram",
-    "binshift",
-    "hbrick",
-    "lbrick",
-    "midichan",
-    "control",
-    "ccn",
-    "ccv",
-    "polyTouch",
-    "midibend",
-    "miditouch",
-    "ctlNum",
-    "frameRate",
-    "frames",
-    "hours",
-    "midicmd",
-    "minutes",
-    "progNum",
-    "seconds",
-    "songPtr",
-    "uid",
-    "val",
-    "cps",
-    "legato",
-    "dur",
-    "zrand",
-    "curve",
-    "deltaSlide",
-    "pitchJump",
-    "pitchJumpTime",
-    "lfo",
-    "repeatTime",
-    "znoise",
-    "zmod",
-    "zcrush",
-    "zdelay",
-    "tremolo",
-    "zzfx",
-    "colour",
-    "createParams",
-    "ad",
-    "ds",
-    "ar"
-  ],
-  "/packages/core/euclid.mjs": [
-    "bjork",
-    "euclidrot"
-  ],
-  "/packages/core/zyklus.mjs": [],
-  "/packages/core/signal.mjs": [
-    "steady",
-    "signal",
-    "isaw",
-    "isaw2",
-    "saw2",
-    "sine2",
-    "cosine2",
-    "square2",
-    "tri2",
-    "time",
-    "_brandBy",
-    "_irand",
-    "pickSqueeze",
-    "pickmodSqueeze",
-    "__chooseWith",
-    "randcat",
-    "wrandcat",
-    "perlinWith",
-    "degradeByWith"
-  ],
-  "/packages/core/speak.mjs": [
-    "speak"
-  ],
   "/packages/core/evaluate.mjs": [
+    "strudelScope",
+    "userDefinedKeys",
     "evalScope",
     "evaluate"
+  ],
+  "/packages/core/pattern.mjs": [
+    "acorn parse error: SyntaxError: undefined"
+  ],
+  "/packages/core/controls.mjs": [
+    "acorn parse error: SyntaxError: undefined"
+  ],
+  "/packages/core/euclid.mjs": [
+    "bjorklund",
+    "bjork",
+    "euclidrot",
+    "eish"
+  ],
+  "/packages/core/zyklus.mjs": [],
+  "/packages/core/cyclist.mjs": [
+    "Cyclist"
+  ],
+  "/packages/core/impure.mjs": [
+    "reset_state",
+    "reset_timelines",
+    "timeline"
+  ],
+  "/packages/core/pick.mjs": [
+    "pickSqueeze",
+    "pickmodSqueeze"
   ],
   "/packages/core/neocyclist.mjs": [
     "NeoCyclist"
   ],
-  "/packages/core/cyclist.mjs": [
-    "Cyclist"
-  ],
-  "/packages/core/time.mjs": [
+  "/packages/core/schedulerState.mjs": [
     "getTime",
-    "setTime"
+    "setTime",
+    "setCpsFunc",
+    "getCps",
+    "setPattern",
+    "getPattern",
+    "setTriggerFunc",
+    "getTriggerFunc",
+    "setIsStarted",
+    "getIsStarted"
   ],
   "/packages/core/repl.mjs": [
     "repl",
     "getTrigger"
+  ],
+  "/packages/core/signal.mjs": [
+    "steady",
+    "signal",
+    "mouseY",
+    "mouseX",
+    "getRandsAtTime",
+    "randrun",
+    "_brandBy",
+    "_irand",
+    "__chooseWith",
+    "chooseIn",
+    "chooseOut",
+    "randcat",
+    "wrandcat",
+    "degradeByWith",
+    "_keyDown",
+    "perCycle"
+  ],
+  "/packages/core/speak.mjs": [
+    "speak"
   ],
   "/packages/core/ui.mjs": [
     "backgroundImage",
@@ -440,13 +350,19 @@
     "isTauri"
   ],
   "/packages/desktopbridge/midibridge.mjs": [],
-  "/packages/desktopbridge/oscbridge.mjs": [],
+  "/packages/desktopbridge/oscbridge.mjs": [
+    "oscTriggerTauri"
+  ],
   "/packages/desktopbridge/index.mjs": [],
   "/packages/draw/draw.mjs": [
     "getDrawContext",
     "cleanupDraw",
+    "cleanupDrawContext",
     "Framer",
-    "Drawer"
+    "Drawer",
+    "getComputedPropertyValue",
+    "getTheme",
+    "setTheme"
   ],
   "/packages/draw/animate.mjs": [
     "x",
@@ -467,16 +383,98 @@
     "convertHexToNumber"
   ],
   "/packages/draw/pianoroll.mjs": [
+    "__pianoroll",
     "getDrawOptions",
     "getPunchcardPainter",
     "drawPianoroll"
   ],
   "/packages/draw/spiral.mjs": [],
+  "/packages/draw/pitchwheel.mjs": [],
   "/packages/draw/index.mjs": [],
+  "/packages/edo/edoscale.mjs": [
+    "EdoScale"
+  ],
+  "/packages/edo/ratios.mjs": [],
+  "/packages/edo/intervals.mjs": [
+    "Intervals"
+  ],
+  "/packages/edo/pitches.mjs": [
+    "Pitches"
+  ],
+  "/packages/edo/edo.mjs": [],
+  "/packages/edo/index.mjs": [
+    "packageName"
+  ],
+  "/packages/superdough/audioContext.mjs": [
+    "setDefaultAudioContext",
+    "setAudioContext",
+    "getAudioContext",
+    "getAudioContextCurrentTime"
+  ],
+  "/packages/superdough/logger.mjs": [
+    "errorLogger",
+    "logger",
+    "setLogger"
+  ],
+  "/packages/superdough/noise.mjs": [
+    "getNoiseBuffer",
+    "getNoiseOscillator",
+    "getNoiseMix"
+  ],
+  "/packages/superdough/nodePools.mjs": [
+    "isPoolable",
+    "releaseNodeToPool",
+    "getNodeFromPool"
+  ],
+  "/packages/superdough/util.mjs": [
+    "tokenizeNote",
+    "getAccidentalsOffset",
+    "noteToMidi",
+    "midiToFreq",
+    "clamp",
+    "freqToMidi",
+    "valueToMidi",
+    "nanFallback",
+    "_mod",
+    "getSoundIndex",
+    "cycleToSeconds",
+    "secondsToCycle",
+    "getCommonSampleInfo",
+    "getBaseURL"
+  ],
+  "/packages/superdough/helpers.mjs": [
+    "noises",
+    "gainNode",
+    "effectSend",
+    "getWorklet",
+    "getParamADSR",
+    "getEnvelope",
+    "getLfo",
+    "getCompressor",
+    "getADSRValues",
+    "getParamLfo",
+    "applyParameterModulators",
+    "createFilter",
+    "drywet",
+    "getPitchEnvelope",
+    "getVibratoOscillator",
+    "scheduleAtTime",
+    "webAudioTimeout",
+    "applyFM",
+    "distortionAlgorithms",
+    "getDistortionAlgorithm",
+    "getDistortion",
+    "getFrequencyFromValue",
+    "onceEnded",
+    "releaseAudioNode",
+    "cleanupOnEnd"
+  ],
+  "/packages/midi/util.mjs": [],
+  "/packages/midi/input.mjs": [
+    "acorn parse error: SyntaxError: undefined"
+  ],
   "/packages/midi/midi.mjs": [
-    "WebMidi",
-    "enableWebMidi",
-    "midin"
+    "acorn parse error: SyntaxError: undefined"
   ],
   "/packages/midi/index.mjs": [],
   "/packages/mini/krill-parser.js": [],
@@ -502,6 +500,7 @@
   "/packages/repl/index.mjs": [],
   "/packages/soundfonts/gm.mjs": [],
   "/packages/soundfonts/fontloader.mjs": [
+    "setSoundfontUrl",
     "getFontBufferSource",
     "getFontPitch",
     "registerSoundfonts"
@@ -521,67 +520,40 @@
   "/packages/superdough/vowel.mjs": [
     "vowelFormant"
   ],
-  "/packages/superdough/logger.mjs": [
-    "logger",
-    "setLogger"
+  "/packages/superdough/superdoughdata.mjs": [
+    "getSuperdoughControlTargets"
   ],
-  "/packages/superdough/util.mjs": [
-    "tokenizeNote",
-    "noteToMidi",
-    "midiToFreq",
-    "clamp",
-    "freqToMidi",
-    "valueToMidi",
-    "nanFallback",
-    "_mod",
-    "getSoundIndex"
-  ],
-  "/packages/superdough/helpers.mjs": [
-    "gainNode",
-    "getParamADSR",
-    "getCompressor",
-    "getADSRValues",
-    "createFilter",
-    "drywet",
-    "getPitchEnvelope",
-    "getVibratoOscillator",
-    "webAudioTimeout",
-    "applyFM"
+  "/packages/superdough/modulators.mjs": [
+    "connectLFO",
+    "connectEnvelope",
+    "connectBusModulator"
   ],
   "/packages/superdough/sampler.mjs": [
     "getCachedBuffer",
+    "getDuration",
+    "getSampleInfo",
+    "getSampleBuffer",
     "getSampleBufferSource",
     "loadBuffer",
     "reverseBuffer",
     "getLoadedBuffer",
     "processSampleMap",
     "registerSamplesPrefix",
-    "onTriggerSample"
+    "fetchSampleMap",
+    "onTriggerSample",
+    "registerSampleSource"
+  ],
+  "/packages/superdough/superdoughoutput.mjs": [
+    "acorn parse error: SyntaxError: undefined"
+  ],
+  "/packages/superdough/wavetable.mjs": [
+    "Warpmode",
+    "resetSeenKeys",
+    "registerWaveTable",
+    "onTriggerSynth"
   ],
   "/packages/superdough/superdough.mjs": [
-    "soundMap",
-    "registerSound",
-    "getSound",
-    "resetLoadedSounds",
-    "setDefaultAudioContext",
-    "getAudioContext",
-    "getWorklet",
-    "initAudio",
-    "initAudioOnFirstClick",
-    "initializeAudioOutput",
-    "connectToDestination",
-    "panic",
-    "analysers",
-    "analysersData",
-    "getAnalyserById",
-    "getAnalyzerData",
-    "resetGlobalEffects",
-    "superdough",
-    "superdoughTrigger"
-  ],
-  "/packages/superdough/noise.mjs": [
-    "getNoiseOscillator",
-    "getNoiseMix"
+    "acorn parse error: SyntaxError: undefined"
   ],
   "/packages/superdough/synth.mjs": [
     "registerSynthSounds",
@@ -622,7 +594,11 @@
     "Step",
     "Note"
   ],
-  "/packages/tonal/tonal.mjs": [],
+  "/packages/tonal/tonal.mjs": [
+    "trans",
+    "scaleTrans",
+    "strans"
+  ],
   "/packages/tonal/ireal.mjs": [
     "simple",
     "complex"
@@ -639,31 +615,51 @@
     "packageName"
   ],
   "/packages/transpiler/transpiler.mjs": [
-    "registerWidgetType",
-    "transpiler",
-    "getWidgetID"
+    "registerLanguage",
+    "getLanguages",
+    "registerTranspilerPlugin",
+    "getPlugins",
+    "transpiler"
+  ],
+  "/packages/transpiler/plugin-kabelsalat.mjs": [
+    "genExprSource",
+    "extractPatternPlaceholders"
+  ],
+  "/packages/transpiler/plugin-mini.mjs": [
+    "acorn parse error: SyntaxError: undefined"
+  ],
+  "/packages/transpiler/plugin-sample.mjs": [
+    "withAwait"
+  ],
+  "/packages/transpiler/plugin-widgets.mjs": [
+    "acorn parse error: SyntaxError: undefined"
   ],
   "/packages/transpiler/index.mjs": [
     "evaluate"
   ],
+  "/packages/webaudio/supradough.mjs": [
+    "fetchSampleMap",
+    "doughsamples"
+  ],
   "/packages/webaudio/webaudio.mjs": [
     "webaudioOutput",
+    "renderPatternAudio",
     "webaudioRepl"
   ],
   "/packages/webaudio/scope.mjs": [
     "drawTimeScope",
     "drawFrequencyScope"
   ],
+  "/packages/webaudio/spectrum.mjs": [],
   "/packages/webaudio/index.mjs": [],
+  "/packages/xen/tunejs.js": [],
   "/packages/xen/xen.mjs": [
     "edo",
-    "xen",
-    "tuning"
+    "ftrans",
+    "fTrans",
+    "fTranspose"
   ],
-  "/packages/xen/tunejs.js": [],
-  "/packages/xen/tune.mjs": [
-    "tune"
-  ],
+  "/packages/xen/tune.mjs": [],
   "/packages/xen/index.mjs": [],
   "/index.mjs": []
 }
