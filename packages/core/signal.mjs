@@ -15,6 +15,24 @@ export function steady(value) {
   return new Pattern((state) => [new Hap(undefined, state.span, value)]);
 }
 
+/**
+ * Creates a signal given by the input function
+ *
+ * @name signal
+ * @param {*} func
+ * @returns {Pattern} signal
+ * @tags generators
+ * @example
+ * // sawtooth signal definition
+ * signal(t=>t%1).segment(16).range(30,40).note()
+ * @example
+ * signal(t=>Math.pow(t,2)%1).range(40, 60).add(5).segment(16)
+ * .off(0, x=>x.add(7))
+ * .note()
+ * .s("gm_electric_guitar_jazz,gm_epiano")
+ *   .gain(1.7)
+ * .pianoroll()
+ */
 export const signal = (func) => {
   const query = (state) => [new Hap(undefined, state.span, func(state.span.begin, state.controls))];
   return new Pattern(query);
@@ -172,6 +190,7 @@ export const time = signal(id);
 /**
  *  The mouse's x position value ranges from 0 to 1.
  * @name mousex
+ * @synonyms mouseX
  * @return {Pattern}
  * @tags external_io
  * @example
@@ -182,6 +201,7 @@ export const time = signal(id);
 /**
  *  The mouse's y position value ranges from 0 to 1.
  * @name mousey
+ * @synonyms mouseY
  * @return {Pattern}
  * @tags external_io
  * @example
@@ -571,7 +591,7 @@ export const choose = (...xs) => chooseWith(rand, xs);
 
 /**
  * Has no difference with `choose`
- * 
+ *
  * @name chooseIn
  * @deprecated
  * @returns {Pattern}

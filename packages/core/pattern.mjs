@@ -1074,7 +1074,7 @@ const COMPOSERS = {
    * @param {Pattern} pat
    * @returns {Pattern}
    * @memberof Pattern
-   * @tags internal, combiners
+   * @tags internals, combiners
    * @example
    * // because input pattern has `s` set,
    * // it overrides the "sine" declared earlier
@@ -1099,7 +1099,7 @@ const COMPOSERS = {
    * @param {Pattern} pat
    * @memberof Pattern
    * @returns {Pattern}
-   * @tags internal, combiners
+   * @tags internals, combiners
    * @example
    * // notes, already defined, will stay "c a f e",
    * // while "s", not defined, will be set to "piano"

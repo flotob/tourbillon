@@ -127,6 +127,7 @@ export const getPlayableNoteValue = (hap) => {
  * `getFreq('c3')`
  *
  * @name getFrequency
+ * @tags pitch
  * @synonyms getFreq
  * @param {Hap | note | number}
  * @returns {Number}
