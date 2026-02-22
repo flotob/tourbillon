@@ -850,6 +850,22 @@ export class Pattern {
     return stack(this, ...pats);
   }
 
+  stackLeft(...pats) {
+    return stackLeft(this, ...pats);
+  }
+
+  stackRight(...pats) {
+    return stackRight(this, ...pats);
+  }
+
+  stackCentre(...pats) {
+    return stackCentre(this, ...pats);
+  }
+
+  stackRepeat(...pats) {
+    return stackRepeat(this, ...pats);
+  }
+
   sequence(...pats) {
     return sequence(this, ...pats);
   }
@@ -1527,6 +1543,9 @@ function _stackWith(func, pats) {
  * @return {Pattern}
  * @example
  * stackLeft("0 1 2 3", "3 4", "[4 5 6] 7 8 9 10").scale("c:minor").note()
+ * @example
+ * // chainable
+ * "0 1 2 3".stackLeft("3 4", "[4 5 6] 7 8 9 10").scale("c:minor").note()
  */
 export function stackLeft(...pats) {
   return _stackWith(
@@ -1543,6 +1562,9 @@ export function stackLeft(...pats) {
  * @return {Pattern}
  * @example
  * stackRight("0 1 2 3", "3 4", "[4 5 6] 7 8 9 10").scale("c:minor").note()
+ * @example
+ * // chainable
+ * "0 1 2 3".stackRight("3 4", "[4 5 6] 7 8 9 10").scale("c:minor").note()
  */
 export function stackRight(...pats) {
   return _stackWith(
@@ -1559,6 +1581,9 @@ export function stackRight(...pats) {
  * @return {Pattern}
  * @example
  * stackCentre("0 1 2 3", "3 4", "[4 5 6] 7 8 9 10").scale("c:minor").note()
+ * @example
+ * // chainable
+ * "0 1 2 3".stackCentre("3 4", "[4 5 6] 7 8 9 10").scale("c:minor").note()
  */
 export function stackCentre(...pats) {
   return _stackWith(
@@ -1585,6 +1610,9 @@ export function stackCenter(pats) {
  * @return {Pattern}
  * @example
  * stackRepeat("0 1 2 3", "3 4", "[4 5 6] 7 8 9 10").scale("c:minor").note()
+ * @example
+ * // chainable
+ * "0 1 2 3".stackRepeat("3 4", "[4 5 6] 7 8 9 10").scale("c:minor").note()
  */
 export function stackRepeat(...pats) {
   return stackBy(reify('repeat'), ...pats);
