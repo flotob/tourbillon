@@ -5,7 +5,7 @@ This program is free software: you can redistribute it and/or modify it under th
 */
 
 import { Hap } from './hap.mjs';
-import { Pattern, fastcat, pure, register, reify, silence, stack, sequenceP } from './pattern.mjs';
+import { Pattern, fastcat, pure, register, reify, silence, stack, sequenceP, isPattern } from './pattern.mjs';
 import Fraction from './fraction.mjs';
 
 import { id, keyAlias, getCurrentKeyboardState } from './util.mjs';
@@ -742,11 +742,32 @@ export const perlin = signal((t, controls) => _perlin(t, controls.randSeed));
  */
 export const berlin = signal((t, controls) => _berlin(t, controls.randSeed));
 
+/**
+ * `degradeByWith` is like `degradeBy`, but with more granular control. 
+ * 
+ * `degradeBy(x)` is essentially `degradeByWith(rand, x)`
+ * 
+ * This allows you to do things other than with `rand`, see examples below 
+ * 
+ * @name degradeByWith
+ * @param {Pattern|number} test
+ * @param {Pattern|number} testAgainst
+ * @memberof Pattern
+ * @tags temporal
+ * @returns {Pattern}
+ * @example
+ * note("c a f e").degradeByWith(sine, .1)
+ * @example
+ * note("c a f e").degradeByWith(perlin, .5)
+ * @example 
+ * note("c a f e").degradeByWith(sine, cosine)
+ */
 export const degradeByWith = register(
   'degradeByWith',
-  (withPat, x, pat) => pat.fmap((a) => (_) => a).appLeft(withPat.filterValues((v) => v > x)),
-  true,
-  true,
+  (withPat, x, pat) => {
+    if (!isPattern(withPat)) withPat = pure(withPat)
+    return pat.fmap((a) => (_) => a).appLeft(withPat.filterValues((v) => v > x));
+  },
 );
 
 /**
