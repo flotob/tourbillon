@@ -1523,7 +1523,7 @@ function _stackWith(func, pats) {
  * The input patterns are aligned to the left, with silence padded to the shorter pattern(s) in the final steps if there's a stepcount disparity. See also `stackRight` and `stackCentre/stackCenter`
  *
  * @name stackLeft
- * @tags temporal, stepwise
+ * @tags temporal, stepwise, combiners
  * @return {Pattern}
  * @example
  * stackLeft("0 1 2 3", "3 4", "[4 5 6] 7 8 9 10").scale("c:minor").note()
@@ -1539,7 +1539,7 @@ export function stackLeft(...pats) {
  * The input patterns are aligned to the right, with silence padded to the shorter pattern(s) in the initial steps if there's a stepcount disparity. See also `stackLeft` and `stackCentre/stackCenter`
  *
  * @name stackRight
- * @tags temporal, stepwise
+ * @tags temporal, stepwise, combiners
  * @return {Pattern}
  * @example
  * stackRight("0 1 2 3", "3 4", "[4 5 6] 7 8 9 10").scale("c:minor").note()
@@ -1554,7 +1554,7 @@ export function stackRight(...pats) {
 /**
  * The input patterns are aligned to the right, with silence padded to the shorter pattern(s) in the initial steps if there's a stepcount disparity. See also `stackLeft` and `stackCentre/stackCenter`
  * @name stackCentre
- * @tags temporal, stepwise
+ * @tags temporal, stepwise, combiners
  * @synonyms stackCenter
  * @return {Pattern}
  * @example
@@ -1576,6 +1576,18 @@ export function stackCentre(...pats) {
 
 export function stackCenter(pats) {
   return stackCentre(pats);
+}
+
+/**
+ * Shorthand for `pm(patterns).pace(m)` where m is the max step count in the input patterns
+ * @name stackRepeat
+ * @tags temporal, stepwise, combiners
+ * @return {Pattern}
+ * @example
+ * stackRepeat("0 1 2 3", "3 4", "[4 5 6] 7 8 9 10").scale("c:minor").note()
+ */
+export function stackRepeat(...pats) {
+  return stackBy(reify('repeat'), ...pats);
 }
 
 export function stackBy(by, ...pats) {
