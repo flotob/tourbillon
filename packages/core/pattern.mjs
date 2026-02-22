@@ -1519,6 +1519,15 @@ function _stackWith(func, pats) {
   return stack(...func(steps, pats));
 }
 
+/**
+ * The input patterns are aligned to the left, with silence padded to the shorter pattern(s) in the final steps if there's a stepcount disparity. See also `stackRight` and `stackCentre/stackCenter`
+ *
+ * @name stackLeft
+ * @tags temporal, stepwise
+ * @return {Pattern}
+ * @example
+ * stackLeft("0 1 2 3", "3 4", "[4 5 6] 7 8 9 10").scale("c:minor").note()
+ */
 export function stackLeft(...pats) {
   return _stackWith(
     (steps, pats) => pats.map((pat) => (pat._steps.eq(steps) ? pat : stepcat(pat, gap(steps.sub(pat._steps))))),
@@ -1526,6 +1535,15 @@ export function stackLeft(...pats) {
   );
 }
 
+/**
+ * The input patterns are aligned to the right, with silence padded to the shorter pattern(s) in the initial steps if there's a stepcount disparity. See also `stackLeft` and `stackCentre/stackCenter`
+ *
+ * @name stackRight
+ * @tags temporal, stepwise
+ * @return {Pattern}
+ * @example
+ * stackRight("0 1 2 3", "3 4", "[4 5 6] 7 8 9 10").scale("c:minor").note()
+ */
 export function stackRight(...pats) {
   return _stackWith(
     (steps, pats) => pats.map((pat) => (pat._steps.eq(steps) ? pat : stepcat(gap(steps.sub(pat._steps)), pat))),
@@ -1533,6 +1551,15 @@ export function stackRight(...pats) {
   );
 }
 
+/**
+ * The input patterns are aligned to the right, with silence padded to the shorter pattern(s) in the initial steps if there's a stepcount disparity. See also `stackLeft` and `stackCentre/stackCenter`
+ * @name stackCentre
+ * @tags temporal, stepwise
+ * @synonyms stackCenter
+ * @return {Pattern}
+ * @example
+ * stackCentre("0 1 2 3", "3 4", "[4 5 6] 7 8 9 10").scale("c:minor").note()
+ */
 export function stackCentre(...pats) {
   return _stackWith(
     (steps, pats) =>
@@ -1545,6 +1572,10 @@ export function stackCentre(...pats) {
       }),
     pats,
   );
+}
+
+export function stackCenter(pats) {
+  return stackCentre(pats);
 }
 
 export function stackBy(by, ...pats) {
@@ -2922,10 +2953,29 @@ export const { ribbon, rib } = register(['ribbon', 'rib'], (offset, cycles, pat)
   pat.early(offset).restart(pure(1).slow(cycles)),
 );
 
+/**
+ * Sets the pattern's color to the given [hsla](https://www.w3schools.com/htmL/html_colors_hsl.asp)
+ *
+ * @name hsla
+ * @param {Number} hue (0 - 360)
+ * @param {Number} saturation percentage (0 - 100)
+ * @param {Number} lightness percentage (0 - 100)
+ * @param {Number} alpha (transparency) (0.0 - 1.0)
+ * @tags visualization
+ */
 export const hsla = register('hsla', (h, s, l, a, pat) => {
   return pat.color(`hsla(${h}turn,${s * 100}%,${l * 100}%,${a})`);
 });
 
+/**
+ * Sets the pattern's color to the given [hsl](https://www.w3schools.com/htmL/html_colors_hsl.asp)
+ *
+ * @name hsl
+ * @param {Number} hue (0 - 360)
+ * @param {Number} saturation percentage (0 - 100)
+ * @param {Number} lightness percentage (0 - 100)
+ * @tags visualization
+ */
 export const hsl = register('hsl', (h, s, l, pat) => {
   return pat.color(`hsl(${h}turn,${s * 100}%,${l * 100}%)`);
 });

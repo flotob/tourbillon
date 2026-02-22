@@ -55,7 +55,7 @@ import {
   expand,
 } from '../index.mjs';
 
-import { log, logValues } from '../pattern.mjs';
+import { log, logValues, stackCenter } from '../pattern.mjs';
 
 import { steady } from '../signal.mjs';
 
@@ -1166,6 +1166,7 @@ describe('Pattern', () => {
       expect(stackRight(fastcat(0, 1, 2), fastcat(3, 4))._steps).toStrictEqual(Fraction(3));
       // maybe this should double when they are either all even or all odd
       expect(stackCentre(fastcat(0, 1, 2), fastcat(3, 4))._steps).toStrictEqual(Fraction(3));
+      expect(stackCenter(fastcat(0, 1, 2), fastcat(3, 4))._steps).toStrictEqual(Fraction(3));
       expect(fastcat(0, 1).ply(3)._steps).toStrictEqual(Fraction(6));
       expect(fastcat(0, 1).setSteps(undefined).ply(3)._steps).toStrictEqual(undefined);
       expect(fastcat(0, 1).fast(3)._steps).toStrictEqual(Fraction(2));
