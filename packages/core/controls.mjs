@@ -118,7 +118,7 @@ export const { s, sound } = registerControl(['s', 'n', 'gain'], 'sound');
  * @param {number | Pattern} position Position in the wavetable from 0 to 1
  * @synonyms wavetablePosition
  * @example
- * s("squelch").bank("wt_digital").seg(8).note("F1").wt("0 0.25 0.5 0.75 1")
+ * s("wt_digital").seg(8).note("F1").wt("0 0.25 0.5 0.75 1")
  */
 export const { wt, wavetablePosition } = registerControl('wt', 'wavetablePosition');
 
