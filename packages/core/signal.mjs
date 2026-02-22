@@ -743,12 +743,12 @@ export const perlin = signal((t, controls) => _perlin(t, controls.randSeed));
 export const berlin = signal((t, controls) => _berlin(t, controls.randSeed));
 
 /**
- * `degradeByWith` is like `degradeBy`, but with more granular control. 
- * 
+ * `degradeByWith` is like `degradeBy`, but with more granular control.
+ *
  * `degradeBy(x)` is essentially `degradeByWith(rand, x)`
- * 
- * This allows you to do things other than with `rand`, see examples below 
- * 
+ *
+ * This allows you to do things other than with `rand`, see examples below
+ *
  * @name degradeByWith
  * @param {Pattern|number} test
  * @param {Pattern|number} testAgainst
@@ -759,16 +759,13 @@ export const berlin = signal((t, controls) => _berlin(t, controls.randSeed));
  * note("c a f e").degradeByWith(sine, .1)
  * @example
  * note("c a f e").degradeByWith(perlin, .5)
- * @example 
+ * @example
  * note("c a f e").degradeByWith(sine, cosine)
  */
-export const degradeByWith = register(
-  'degradeByWith',
-  (withPat, x, pat) => {
-    if (!isPattern(withPat)) withPat = pure(withPat)
-    return pat.fmap((a) => (_) => a).appLeft(withPat.filterValues((v) => v > x));
-  },
-);
+export const degradeByWith = register('degradeByWith', (withPat, x, pat) => {
+  if (!isPattern(withPat)) withPat = pure(withPat);
+  return pat.fmap((a) => (_) => a).appLeft(withPat.filterValues((v) => v > x));
+});
 
 /**
  * Randomly removes events from the pattern by a given amount.
