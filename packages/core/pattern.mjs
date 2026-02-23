@@ -2532,8 +2532,12 @@ export const off = register('off', function (time_pat, func, pat) {
  * Returns a new pattern where every other cycle is played once, twice as
  * fast, and offset in time by one quarter of a cycle. Creates a kind of
  * breakbeat feel.
+ * @name brak
  * @tags temporal
  * @returns Pattern
+ * @memberof Pattern
+ * @example
+ * s("bd hh!2 rim").brak()
  */
 export const brak = register('brak', function (pat) {
   return pat.when(slowcat(false, true), (x) => fastcat(x, silence)._late(0.25));

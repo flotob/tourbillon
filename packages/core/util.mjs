@@ -121,16 +121,22 @@ export const getPlayableNoteValue = (hap) => {
 
 /**
  * Given a hap, returns the frequency of the note or freq, if defined
+ * 
  * Given a note, returns the frequency of that note
  * `getFreq('c3')`
+ * 
  * Given a midi note number, returns the frequency of that midi note
  * `getFreq('c3')`
  *
  * @name getFrequency
  * @tags pitch
  * @synonyms getFreq
- * @param {Hap | note | number}
+ * @param {Hap | note | number} input
  * @returns {Number}
+ * @example
+ * i("4 8 9 10 - - 5 7 9 11 - -").tune("tranh3")
+ * .mul(getFreq('c3'))
+ * .freq().clip(.5).room(1)
  */
 export const getFrequency = (hap) => {
   let { value, context } =
