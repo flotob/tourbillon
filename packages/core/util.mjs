@@ -121,10 +121,10 @@ export const getPlayableNoteValue = (hap) => {
 
 /**
  * Given a hap, returns the frequency of the note or freq, if defined
- * 
+ *
  * Given a note, returns the frequency of that note
  * `getFreq('c3')`
- * 
+ *
  * Given a midi note number, returns the frequency of that midi note
  * `getFreq('c3')`
  *
