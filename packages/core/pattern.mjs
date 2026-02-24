@@ -508,6 +508,16 @@ export class Pattern {
    * @param {Function} func
    * @returns Pattern
    * @noAutocomplete
+   * @example
+   * note("[a b, c d] a b c d").s("gm_piano").withHaps(x=>{
+   *   if (x.length > 1) {
+   *     x.map(hap=>{
+   *       // select gm_piano:1 sample
+   *       hap.value.n = 1
+   *     })
+   *   }
+   *   return x
+   * })
    */
   withHaps(func) {
     const result = new Pattern((state) => func(this.query(state), state));
@@ -521,6 +531,17 @@ export class Pattern {
    * @param {Function} func
    * @returns Pattern
    * @noAutocomplete
+   * @example
+   * note("c a f e").withHap(x=>{
+   *   if (x.value.note == 'c') {
+   *     x.value.s = 'gm_piano'
+   *   }
+   *   else {
+   *     x.value.s = 'gm_piano'
+   *     x.value.n = 2
+   *   }
+   *   return x
+   * })
    */
   withHap(func) {
     return this.withHaps((haps) => haps.map(func));
