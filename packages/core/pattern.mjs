@@ -3396,7 +3396,7 @@ export const drop = stepRegister('drop', function (i, pat) {
  * @tags stepwise
  * @example
  * stepcat(
- *   sound("bd bd - cp").extend(2),
+ *   sound("bd bd - <cp hh>").extend(2),
  *   sound("bd - sd -")
  * ).pace(8)
  */
@@ -3407,15 +3407,12 @@ export const extend = stepRegister('extend', function (factor, pat) {
 /**
  * *Experimental*
  *
- * `replicate` is similar to `fast` in that it increases its density, but it also increases the step count
- * accordingly. So `stepcat("a b".replicate(2), "c d")` would be the same as `"a b a b c d"`, whereas
- * `stepcat("a b".fast(2), "c d")` would be the same as `"[a b] [a b] c d"`.
+ * `replicate` is similar to `extend`, except that `replicate` will "replicate" the thing being extended. This will only differ from `extend` when the input pattern differs from cycle to cycle.
  *
- * TODO: find out how this function differs from extend
  * @tags stepwise
  * @example
  * stepcat(
- *   sound("bd bd - cp").replicate(2),
+ *   sound("bd bd - <cp hh>").replicate(2),
  *   sound("bd - sd -")
  * ).pace(8)
  */
