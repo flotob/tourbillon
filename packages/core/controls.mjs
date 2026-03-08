@@ -2226,7 +2226,7 @@ export const { orbit } = registerControl('orbit', 'o');
  *   otherPat.bmod(..) (to modulate another pattern with the bus)
  *
  * @name bus
- * @tags superdirt
+ * @tags superdough
  * @param {number | Pattern} number
  */
 export const { bus } = registerControl('bus');
@@ -2235,7 +2235,7 @@ export const { bus } = registerControl('bus');
  * Postgain multiplier prior to sending the signal to the audio bus.
  *
  * @name busgain
- * @tags superdirt
+ * @tags superdough
  * @synonyms bgain
  * @param {number | Pattern} number
  */
