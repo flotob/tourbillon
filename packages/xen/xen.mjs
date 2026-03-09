@@ -106,6 +106,9 @@ export const xen = register('xen', function (scaleNameOrRatios, pat) {
       }
       const { i, ...otherValues } = hVal;
       const scale = getXenScale(scaleNameOrRatios.query(state)[0].value);
+      // scale probably needs to not be turned into pure vals
+      // maintain hap functionality so highlighting works
+      
       let freq = xenOffset(scale, parseNumeral(hVal.i));
       // 10 is somewhat arbitrary
       freq = trimFreq(freq);
