@@ -61,6 +61,21 @@ function xenOffset(xenScale, offset, index = 0) {
 
 const trimFreq = (freq) => parseFloat(freq.toPrecision(10));
 
+// const JIsc3 = register('JIsc3', (input) => { 
+//   let k = input
+  
+//   return new Pattern((state) => {
+//     let res = k.query(state)
+//     res = parray(k.query(state).map(x=>{
+//       let c = x.context
+//       x = eval(x.value.join('/'))
+//       let r = reify(x).setContext(c)
+//       return r
+//     })).query(state)
+//     return res
+//   })
+// })
+
 // accepts a scale name such as 31edo, and a pattern
 // pattern expected to follow format such that a value can be mapped
 // to an edostep within the scale. Returns the pattern with
