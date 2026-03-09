@@ -4,7 +4,7 @@ Copyright (C) 2022 Strudel contributors - see <https://codeberg.org/uzu/strudel/
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details. You should have received a copy of the GNU Affero General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { register, _mod, parseNumeral, removeUndefineds } from '@strudel/core';
+import { register, _mod, parseNumeral, removeUndefineds, Pattern } from '@strudel/core';
 import Tune from './tunejs.js';
 
 // returns a list of frequency ratios for given edo scale
@@ -97,15 +97,15 @@ const trimFreq = (freq) => parseFloat(freq.toPrecision(10));
  */
 
 export const xen = register('xen', function (scaleNameOrRatios, pat) {
-  return pat.withHaps((haps) => {
-    haps = haps.map((hap) => {
+  const query = state => {
+    let haps = pat.withHap((hap)=> {
       let hVal = hap.value;
       const isObject = typeof hVal === 'object';
       if (!isObject) {
         throw new Error(`Expected hap to have control 'i' set, but received ${hap.value.i}, try wrapping input in i()`);
       }
       const { i, ...otherValues } = hVal;
-      const scale = getXenScale(scaleNameOrRatios);
+      const scale = getXenScale(scaleNameOrRatios.query(state)[0].value);
       let freq = xenOffset(scale, parseNumeral(hVal.i));
       // 10 is somewhat arbitrary
       freq = trimFreq(freq);
@@ -113,10 +113,11 @@ export const xen = register('xen', function (scaleNameOrRatios, pat) {
       return isEdo(scaleNameOrRatios)
         ? hap.setContext({ ...hap.context, edoSize: scaleNameOrRatios.match(/^([1-9]+[0-9]*)edo$/)[1] })
         : hap;
-    });
+    }).query(state);
     return removeUndefineds(haps);
-  });
-});
+  };
+  return new Pattern(query)
+}, false);
 
 /**
  * Assumes pattern of frequencies tuned to some `base` frequency, such as the output of `xen`
