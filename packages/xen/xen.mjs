@@ -4,7 +4,7 @@ Copyright (C) 2022 Strudel contributors - see <https://codeberg.org/uzu/strudel/
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details. You should have received a copy of the GNU Affero General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { register, _mod, parseNumeral, removeUndefineds, Pattern } from '@strudel/core';
+import { register, _mod, parseNumeral, removeUndefineds, Pattern, parray, reify } from '@strudel/core';
 import Tune from './tunejs.js';
 
 // returns a list of frequency ratios for given edo scale
@@ -61,20 +61,7 @@ function xenOffset(xenScale, offset, index = 0) {
 
 const trimFreq = (freq) => parseFloat(freq.toPrecision(10));
 
-// const JIsc3 = register('JIsc3', (input) => { 
-//   let k = input
-  
-//   return new Pattern((state) => {
-//     let res = k.query(state)
-//     res = parray(k.query(state).map(x=>{
-//       let c = x.context
-//       x = eval(x.value.join('/'))
-//       let r = reify(x).setContext(c)
-//       return r
-//     })).query(state)
-//     return res
-//   })
-// })
+
 
 // accepts a scale name such as 31edo, and a pattern
 // pattern expected to follow format such that a value can be mapped
@@ -112,24 +99,55 @@ const trimFreq = (freq) => parseFloat(freq.toPrecision(10));
  */
 
 export const xen = register('xen', function (scaleNameOrRatios, pat) {
+  const JIsc3 = (input) => {
+    let k = input
+
+    return new Pattern((state) => {
+      let res = k.query(state)
+      res = parray(k.query(state).map(x => {
+        let c = x.context
+        x = eval(x.value.join('/'))
+        let r = reify(x).setContext(c)
+        return r
+      })).query(state)
+      return res
+    })
+  }
+
   const query = state => {
-    let haps = pat.withHap((hap)=> {
+    let haps = pat.withHap((hap) => {
       let hVal = hap.value;
       const isObject = typeof hVal === 'object';
       if (!isObject) {
         throw new Error(`Expected hap to have control 'i' set, but received ${hap.value.i}, try wrapping input in i()`);
       }
       const { i, ...otherValues } = hVal;
-      const scale = getXenScale(scaleNameOrRatios.query(state)[0].value);
-      // scale probably needs to not be turned into pure vals
-      // maintain hap functionality so highlighting works
-      
+      // const scale = getXenScale(JIsc3(scaleNameOrRatios).query(state)[0].value);
+      let scale
+      let edo = false
+      if (scaleNameOrRatios.__pure != undefined) {
+        scale = getXenScale(scaleNameOrRatios.__pure)
+      } else {
+        let sc = scaleNameOrRatios.splitQueries().query(state);
+        let nameMaybe = sc[0].value
+        if (typeof sc[0].value == 'string') {
+          scale = getXenScale(sc[0].value)
+          if (isEdo(nameMaybe)) {
+            edo = nameMaybe.match(/^([1-9]+[0-9]*)edo$/)[1]
+          }
+          hap = hap.setContext(hap.combineContext(sc[0]))
+        } else {
+          // we can do [0] here because JIsc3 uses parray
+          scale = getXenScale(JIsc3(scaleNameOrRatios).query(state)[0].value);
+          hap = hap.setContext(hap.combineContext(scaleNameOrRatios.query(state)[i]))
+        }
+      }
       let freq = xenOffset(scale, parseNumeral(hVal.i));
       // 10 is somewhat arbitrary
       freq = trimFreq(freq);
       hap.value = { ...otherValues, freq };
-      return isEdo(scaleNameOrRatios)
-        ? hap.setContext({ ...hap.context, edoSize: scaleNameOrRatios.match(/^([1-9]+[0-9]*)edo$/)[1] })
+      return edo
+        ? hap.setContext({ ...hap.context, edoSize: edo })
         : hap;
     }).query(state);
     return removeUndefineds(haps);
