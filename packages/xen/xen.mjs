@@ -90,6 +90,15 @@ const trimFreq = (freq) => parseFloat(freq.toPrecision(10));
  *   Math.pow(2, 18/31),
  * ]).piano()
  * @example
+ * // However, with the above you won't get highlighting of the scale indices,
+ * // instead you could do something like:
+ * i("[<2 ->, 0 1 <- 2> 3]*2").xen([
+ *   "1:1", // tonic
+ *   "5:4", // Major 3rd
+ *   "[3:2 4:3]", // Perfect 5th, 4th
+ *   "5:3" // Major 6th
+ * ]).s("tri")
+ * @example
  * // xen also supports all scale names that
  * // tune does:
  * i("0 1 2 3 4 5").xen("hexany15")
@@ -145,7 +154,7 @@ export const xen = register(
                 edo = sc.match(/^([1-9]+[0-9]*)edo$/)[1];
               }
               hap = hap.setContext(hap.combineContext(input[ith]));
-            } else if (sc.every((x) => typeof x == 'number')) {
+            } else if (Array.isArray(sc) && sc.every((x) => typeof x == 'number')) {
               scale = getXenScale(sc);
             } else {
               scale = getXenScale(sc.value);
