@@ -178,15 +178,17 @@ export const xen = register(
     const query = (state) => {
       let input = scaleNameOrRatios.query(state);
       
+      if (input.length == 0) return []
+
       let scPat = input[0].value
       let scs
       if (typeof scPat == 'string') {
-        scs = [scPat]
+        scs = input.map(x=>x.value)
       } else {
         scs = JIsc2(scPat).query(state)
       }
 
-      let k = scs.map(sc => {
+      let k = scs.map((sc, ith) => {
         let haps = pat
           .withHap((hap) => {
             let hVal = hap.value;
@@ -205,7 +207,7 @@ export const xen = register(
               if (isEdo(sc)) {
                 edo = sc.match(/^([1-9]+[0-9]*)edo$/)[1];
               }
-              hap = hap.setContext(hap.combineContext(sc));
+              hap = hap.setContext(hap.combineContext(input[ith]));
             } else {
               scale = getXenScale(sc.value);
               for (let h of scPat[i].query(state)) {
@@ -219,8 +221,8 @@ export const xen = register(
             return edo ? hap.setContext({ ...hap.context, edoSize: edo }) : hap;
           })
           .query(state);
-        // return removeUndefineds(haps);
-        return haps
+        return removeUndefineds(haps);
+        // return haps
       })
       return flatten(k)
     };
@@ -230,7 +232,9 @@ export const xen = register(
     return new Pattern(query)
   we could do a join on scaleNameOrRatios which creates multiple patterns and then joins them
   */
-    return new Pattern(query);
+    let res = new Pattern(query)
+    
+    return res;
   },
   false,
 );
