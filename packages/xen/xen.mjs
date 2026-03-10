@@ -67,6 +67,16 @@ const trimFreq = (freq) => parseFloat(freq.toPrecision(10));
 // values mapped to the frequencies associated with the given edosteps
 // scaleNameOrRatios: string || number[], steps?: number
 
+// old, currently unsupported
+//  * @example
+//  * // You can also use xen with frequency ratios.
+//  * // This is equivalent to the above:
+//  * i("0 1 2").xen([
+//  *   Math.pow(2, 0/31),
+//  *   Math.pow(2, 8/31),
+//  *   Math.pow(2, 18/31),
+//  * ]).piano()
+
 /**
  * Assumes a numerical pattern of scale steps, and a scale. Scales accepted are all preset scale names of `tune`, arbitrary edos such as 31edo, or an array of frequency ratios. Assumes scales repeat at octave (2/1). Returns a new pattern with all values mapped to their associated frequency, assuming a base frequency of 220hz.
  *
@@ -78,14 +88,6 @@ const trimFreq = (freq) => parseFloat(freq.toPrecision(10));
  * @example
  * // A minor triad in 31edo:
  * i("0 8 18").xen("31edo").piano()
- * @example
- * // You can also use xen with frequency ratios.
- * // This is equivalent to the above:
- * i("0 1 2").xen([
- *   Math.pow(2, 0/31),
- *   Math.pow(2, 8/31),
- *   Math.pow(2, 18/31),
- * ]).piano()
  * @example
  * // xen also supports all scale names that
  * // tune does:
@@ -116,76 +118,26 @@ export const xen = register(
       });
     };
 
-    // How do we use curry to solve the stack problem
-    /* 
-  Register does this by effectively saying
-  are there multiple args?
-  If so, split them into two arrays
-  left has 1, right has rest
-  join left and right:
-    
-    result = join(right.reduce((acc, p) => acc.appLeft(p), left.fmap(mapFn))); 
-  
-  where mapFn applies the registered function 'func'.
-  ----
-  When we're in xen but not in query, then we already have access to `scaleNameOrRatios`
-  Could we run query for each? (could that be 'func' in this case?) 
-  ----
-  I don't think so, I think it makes more sense to do it within the query, but call an innerfunc on each arg
-  ----
-  Okay, working for strings.
-
-  How do you tell the different between these two inputs?
-
-  i("0 1").xen(`
-    1:1,
-    [13:12, 5:4],
-    2:1
-  `).piano().log()
-
-  i("0 1").xen(`
-    1:1,
-    13:12, 
-    5:4,
-    2:1
-  `).piano().log()
-
-
-  If it's not, we can just do: 
-  xen([
-    "1:1",
-    "[13:12, 5:4]",
-    ...
-  ])
-
-  ---- 
-  
-  okay I got the above working and now I need to rejigger this one to work with the other stuff
-  
-  i("0 1 2 3").xen("hexany15, [sev-elev hexany23]").s("sin")
-
-  */
-
     const JIsc2 = (input) => {
-      let k = parray(input)
+      let k = parray(input);
 
       return new Pattern((state) => {
-        let res = k.withValue(x => x.map(y => eval(y.join('/')))).query(state)
-        return res
-      })
-    }
+        let res = k.withValue((x) => x.map((y) => eval(y.join('/')))).query(state);
+        return res;
+      });
+    };
 
     const query = (state) => {
       let input = scaleNameOrRatios.query(state);
-      
-      if (input.length == 0) return []
 
-      let scPat = input[0].value
-      let scs
+      if (input.length == 0) return [];
+
+      let scPat = input[0].value;
+      let scs;
       if (typeof scPat == 'string') {
-        scs = input.map(x=>x.value)
+        scs = input.map((x) => x.value);
       } else {
-        scs = JIsc2(scPat).query(state)
+        scs = JIsc2(scPat).query(state);
       }
 
       let k = scs.map((sc, ith) => {
@@ -223,8 +175,8 @@ export const xen = register(
           .query(state);
         return removeUndefineds(haps);
         // return haps
-      })
-      return flatten(k)
+      });
+      return flatten(k);
     };
 
     /* 
@@ -232,8 +184,8 @@ export const xen = register(
     return new Pattern(query)
   we could do a join on scaleNameOrRatios which creates multiple patterns and then joins them
   */
-    let res = new Pattern(query)
-    
+    let res = new Pattern(query);
+
     return res;
   },
   false,
