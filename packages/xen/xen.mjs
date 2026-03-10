@@ -4,7 +4,7 @@ Copyright (C) 2022 Strudel contributors - see <https://codeberg.org/uzu/strudel/
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details. You should have received a copy of the GNU Affero General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { register, _mod, parseNumeral, removeUndefineds, Pattern, parray, reify } from '@strudel/core';
+import { register, _mod, parseNumeral, removeUndefineds, Pattern, parray, reify, State } from '@strudel/core';
 import Tune from './tunejs.js';
 
 // returns a list of frequency ratios for given edo scale
@@ -122,13 +122,13 @@ export const xen = register('xen', function (scaleNameOrRatios, pat) {
         throw new Error(`Expected hap to have control 'i' set, but received ${hap.value.i}, try wrapping input in i()`);
       }
       const { i, ...otherValues } = hVal;
-      // const scale = getXenScale(JIsc3(scaleNameOrRatios).query(state)[0].value);
       let scale
       let edo = false
       if (scaleNameOrRatios.__pure != undefined) {
         scale = getXenScale(scaleNameOrRatios.__pure)
       } else {
-        let sc = scaleNameOrRatios.splitQueries().query(state);
+        let st = new State(state.span.intersection(hap.part))
+        let sc = scaleNameOrRatios.splitQueries().query(st);
         let nameMaybe = sc[0].value
         if (typeof sc[0].value == 'string') {
           scale = getXenScale(sc[0].value)
@@ -139,7 +139,7 @@ export const xen = register('xen', function (scaleNameOrRatios, pat) {
         } else {
           // we can do [0] here because JIsc3 uses parray
           scale = getXenScale(JIsc3(scaleNameOrRatios).query(state)[0].value);
-          hap = hap.setContext(hap.combineContext(scaleNameOrRatios.query(state)[i]))
+          hap = hap.setContext(hap.combineContext(scaleNameOrRatios.query(st)[i]))
         }
       }
       let freq = xenOffset(scale, parseNumeral(hVal.i));
