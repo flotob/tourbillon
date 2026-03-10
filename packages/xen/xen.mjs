@@ -4,7 +4,7 @@ Copyright (C) 2022 Strudel contributors - see <https://codeberg.org/uzu/strudel/
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details. You should have received a copy of the GNU Affero General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { register, _mod, parseNumeral, removeUndefineds, Pattern, parray, reify, State } from '@strudel/core';
+import { register, _mod, parseNumeral, removeUndefineds, Pattern, parray, reify, State, flatten } from '@strudel/core';
 import Tune from './tunejs.js';
 
 // returns a list of frequency ratios for given edo scale
@@ -61,8 +61,6 @@ function xenOffset(xenScale, offset, index = 0) {
 
 const trimFreq = (freq) => parseFloat(freq.toPrecision(10));
 
-
-
 // accepts a scale name such as 31edo, and a pattern
 // pattern expected to follow format such that a value can be mapped
 // to an edostep within the scale. Returns the pattern with
@@ -98,62 +96,99 @@ const trimFreq = (freq) => parseFloat(freq.toPrecision(10));
  * i("0 1 2 3 4 5 6 7").xen("<5edo 10edo 15edo hexany15>")
  */
 
-export const xen = register('xen', function (scaleNameOrRatios, pat) {
-  const JIsc3 = (input) => {
-    let k = input
+export const xen = register(
+  'xen',
+  function (scaleNameOrRatios, pat) {
+    const JIsc3 = (input) => {
+      let k = input;
 
-    return new Pattern((state) => {
-      let res = k.query(state)
-      res = parray(k.query(state).map(x => {
-        let c = x.context
-        x = eval(x.value.join('/'))
-        let r = reify(x).setContext(c)
-        return r
-      })).query(state)
-      return res
-    })
-  }
+      return new Pattern((state) => {
+        let res = k.query(state);
+        res = parray(
+          k.query(state).map((x) => {
+            let c = x.context;
+            x = eval(x.value.join('/'));
+            let r = reify(x).setContext(c);
+            return r;
+          }),
+        ).query(state);
+        return res;
+      });
+    };
 
-  const query = state => {
-    let haps = pat.withHap((hap) => {
-      let hVal = hap.value;
-      const isObject = typeof hVal === 'object';
-      if (!isObject) {
-        throw new Error(`Expected hap to have control 'i' set, but received ${hap.value.i}, try wrapping input in i()`);
-      }
-      const { i, ...otherValues } = hVal;
-      let scale
-      let edo = false
-      if (scaleNameOrRatios.__pure != undefined) {
-        scale = getXenScale(scaleNameOrRatios.__pure)
-      } else {
-        let st = new State(state.span.intersection(hap.part))
-        let sc = scaleNameOrRatios.splitQueries().query(st);
-        let nameMaybe = sc[0].value
-        if (typeof sc[0].value == 'string') {
-          scale = getXenScale(sc[0].value)
-          if (isEdo(nameMaybe)) {
-            edo = nameMaybe.match(/^([1-9]+[0-9]*)edo$/)[1]
-          }
-          hap = hap.setContext(hap.combineContext(sc[0]))
-        } else {
-          // we can do [0] here because JIsc3 uses parray
-          scale = getXenScale(JIsc3(scaleNameOrRatios).query(state)[0].value);
-          hap = hap.setContext(hap.combineContext(scaleNameOrRatios.query(st)[i]))
-        }
-      }
-      let freq = xenOffset(scale, parseNumeral(hVal.i));
-      // 10 is somewhat arbitrary
-      freq = trimFreq(freq);
-      hap.value = { ...otherValues, freq };
-      return edo
-        ? hap.setContext({ ...hap.context, edoSize: edo })
-        : hap;
-    }).query(state);
-    return removeUndefineds(haps);
-  };
-  return new Pattern(query)
-}, false);
+    // How do we use curry to solve the stack problem
+    /* 
+  Register does this by effectively saying
+  are there multiple args?
+  If so, split them into two arrays
+  left has 1, right has rest
+  join left and right:
+    
+    result = join(right.reduce((acc, p) => acc.appLeft(p), left.fmap(mapFn))); 
+  
+  where mapFn applies the registered function 'func'.
+  ----
+  When we're in xen but not in query, then we already have access to `scaleNameOrRatios`
+  Could we run query for each? (could that be 'func' in this case?) 
+  ----
+  I don't think so, I think it makes more sense to do it within the query, but call an innerfunc on each arg
+  */
+    const query = (state) => {
+      let args = scaleNameOrRatios.query(state);
+
+      let k = args.map((arg) => {
+        let haps = pat
+          .withHap((hap) => {
+            let hVal = hap.value;
+            const isObject = typeof hVal === 'object';
+            if (!isObject) {
+              throw new Error(
+                `Expected hap to have control 'i' set, but received ${hap.value.i}, try wrapping input in i()`,
+              );
+            }
+            const { i, ...otherValues } = hVal;
+            let scale;
+            let edo = false;
+            if (scaleNameOrRatios.__pure != undefined) {
+              scale = getXenScale(scaleNameOrRatios.__pure);
+            } else {
+              let st = new State(state.span.intersection(hap.part));
+              let sc = arg;
+              let nameMaybe = sc.value;
+              if (typeof sc.value == 'string') {
+                scale = getXenScale(nameMaybe);
+                if (isEdo(nameMaybe)) {
+                  edo = nameMaybe.match(/^([1-9]+[0-9]*)edo$/)[1];
+                }
+                hap = hap.setContext(hap.combineContext(sc));
+              } else {
+                // we can do [0] here because JIsc3 uses parray
+                scale = getXenScale(JIsc3(scaleNameOrRatios).query(state)[0].value);
+                hap = hap.setContext(hap.combineContext(scaleNameOrRatios.query(st)[i]));
+              }
+            }
+            let freq = xenOffset(scale, parseNumeral(hVal.i));
+            // 10 is somewhat arbitrary
+            freq = trimFreq(freq);
+            hap.value = { ...otherValues, freq };
+            return edo ? hap.setContext({ ...hap.context, edoSize: edo }) : hap;
+          })
+          .query(state);
+        return removeUndefineds(haps);
+      });
+      console.log(k)
+      return flatten(k)
+    };
+
+    /* 
+  perhaps instead of 
+    return new Pattern(query)
+  we could do a join on scaleNameOrRatios which creates multiple patterns and then joins them
+  */
+    return new Pattern(query);
+  },
+  false,
+);
 
 /**
  * Assumes pattern of frequencies tuned to some `base` frequency, such as the output of `xen`
