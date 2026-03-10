@@ -149,11 +149,44 @@ export const xen = register(
     5:4,
     2:1
   `).piano().log()
-  */
-    const query = (state) => {
-      let args = scaleNameOrRatios.query(state);
 
-      let k = args.map((arg) => {
+
+  If it's not, we can just do: 
+  xen([
+    "1:1",
+    "[13:12, 5:4]",
+    ...
+  ])
+
+  ---- 
+  
+  okay I got the above working and now I need to rejigger this one to work with the other stuff
+  
+  i("0 1 2 3").xen("hexany15, [sev-elev hexany23]").s("sin")
+
+  */
+
+    const JIsc2 = (input) => {
+      let k = parray(input)
+
+      return new Pattern((state) => {
+        let res = k.withValue(x => x.map(y => eval(y.join('/')))).query(state)
+        return res
+      })
+    }
+
+    const query = (state) => {
+      let input = scaleNameOrRatios.query(state);
+      
+      let scPat = input[0].value
+      let scs
+      if (typeof scPat == 'string') {
+        scs = [scPat]
+      } else {
+        scs = JIsc2(scPat).query(state)
+      }
+
+      let k = scs.map(sc => {
         let haps = pat
           .withHap((hap) => {
             let hVal = hap.value;
@@ -166,22 +199,17 @@ export const xen = register(
             const { i, ...otherValues } = hVal;
             let scale;
             let edo = false;
-            if (scaleNameOrRatios.__pure != undefined) {
-              scale = getXenScale(scaleNameOrRatios.__pure);
+            let st = new State(state.span.intersection(hap.part));
+            if (typeof sc == 'string') {
+              scale = getXenScale(sc);
+              if (isEdo(sc)) {
+                edo = sc.match(/^([1-9]+[0-9]*)edo$/)[1];
+              }
+              hap = hap.setContext(hap.combineContext(sc));
             } else {
-              let st = new State(state.span.intersection(hap.part));
-              let sc = arg;
-              let nameMaybe = sc.value;
-              if (typeof sc.value == 'string') {
-                scale = getXenScale(nameMaybe);
-                if (isEdo(nameMaybe)) {
-                  edo = nameMaybe.match(/^([1-9]+[0-9]*)edo$/)[1];
-                }
-                hap = hap.setContext(hap.combineContext(sc));
-              } else {
-                // we can do [0] here because JIsc3 uses parray
-                scale = getXenScale(JIsc3(scaleNameOrRatios).query(state)[0].value);
-                hap = hap.setContext(hap.combineContext(scaleNameOrRatios.query(st)[i]));
+              scale = getXenScale(sc.value);
+              for (let h of scPat[i].query(state)) {
+                hap = hap.setContext(hap.combineContext(h));
               }
             }
             let freq = xenOffset(scale, parseNumeral(hVal.i));
@@ -191,9 +219,9 @@ export const xen = register(
             return edo ? hap.setContext({ ...hap.context, edoSize: edo }) : hap;
           })
           .query(state);
-        return removeUndefineds(haps);
-      });
-      console.log(k)
+        // return removeUndefineds(haps);
+        return haps
+      })
       return flatten(k)
     };
 
