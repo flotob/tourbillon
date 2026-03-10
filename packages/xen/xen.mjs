@@ -69,14 +69,6 @@ const trimFreq = (freq) => parseFloat(freq.toPrecision(10));
 
 // old, currently unsupported
 // TODO support
-//  * @example
-//  * // You can also use xen with frequency ratios.
-//  * // This is equivalent to the above:
-//  * i("0 1 2").xen([
-//  *   Math.pow(2, 0/31),
-//  *   Math.pow(2, 8/31),
-//  *   Math.pow(2, 18/31),
-//  * ]).piano()
 
 /**
  * Assumes a numerical pattern of scale steps, and a scale. Scales accepted are all preset scale names of `tune`, arbitrary edos such as 31edo, or an array of frequency ratios. Assumes scales repeat at octave (2/1). Returns a new pattern with all values mapped to their associated frequency, assuming a base frequency of 220hz.
@@ -90,6 +82,14 @@ const trimFreq = (freq) => parseFloat(freq.toPrecision(10));
  * // A minor triad in 31edo:
  * i("0 8 18").xen("31edo").piano()
  * @example
+ * // You can also use xen with frequency ratios.
+ * // This is equivalent to the above:
+ * i("0 1 2").xen([
+ *   Math.pow(2, 0/31),
+ *   Math.pow(2, 8/31),
+ *   Math.pow(2, 18/31),
+ * ]).piano()
+ * @example
  * // xen also supports all scale names that
  * // tune does:
  * i("0 1 2 3 4 5").xen("hexany15")
@@ -102,23 +102,6 @@ const trimFreq = (freq) => parseFloat(freq.toPrecision(10));
 export const xen = register(
   'xen',
   function (scaleNameOrRatios, pat) {
-    const JIsc3 = (input) => {
-      let k = input;
-
-      return new Pattern((state) => {
-        let res = k.query(state);
-        res = parray(
-          k.query(state).map((x) => {
-            let c = x.context;
-            x = eval(x.value.join('/'));
-            let r = reify(x).setContext(c);
-            return r;
-          }),
-        ).query(state);
-        return res;
-      });
-    };
-
     const JIsc2 = (input) => {
       let k = parray(input);
 
@@ -137,6 +120,8 @@ export const xen = register(
       let scs;
       if (typeof scPat == 'string') {
         scs = input.map((x) => x.value);
+      } else if (scPat.every((x) => typeof x == 'number')) {
+        scs = [scPat];
       } else {
         scs = JIsc2(scPat).query(state);
       }
@@ -154,13 +139,14 @@ export const xen = register(
             const { i, ...otherValues } = hVal;
             let scale;
             let edo = false;
-            let st = new State(state.span.intersection(hap.part));
             if (typeof sc == 'string') {
               scale = getXenScale(sc);
               if (isEdo(sc)) {
                 edo = sc.match(/^([1-9]+[0-9]*)edo$/)[1];
               }
               hap = hap.setContext(hap.combineContext(input[ith]));
+            } else if (sc.every((x) => typeof x == 'number')) {
+              scale = getXenScale(sc);
             } else {
               scale = getXenScale(sc.value);
               for (let h of scPat[i].query(state)) {
@@ -175,7 +161,6 @@ export const xen = register(
           })
           .query(state);
         return removeUndefineds(haps);
-        // return haps
       });
       return flatten(k);
     };
