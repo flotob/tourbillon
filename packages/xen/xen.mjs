@@ -68,6 +68,7 @@ const trimFreq = (freq) => parseFloat(freq.toPrecision(10));
 // scaleNameOrRatios: string || number[], steps?: number
 
 // old, currently unsupported
+// TODO support
 //  * @example
 //  * // You can also use xen with frequency ratios.
 //  * // This is equivalent to the above:
