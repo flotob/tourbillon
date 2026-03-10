@@ -120,6 +120,20 @@ export const xen = register(
       });
     };
 
+    // TODO fix the following:
+    /* 
+    let p1 = i("0 1").xen("hexany15 hexany23")
+    let p2 = i("[0 1]").xen([
+      "[1:1 2:1]", // tonic
+      "5:4", // Major 3rd
+    ]).s("tri")
+
+    let p3 = i("[0 1]").xen([
+      "[<1:1 2:1>]", // tonic
+      "5:4", // Major 3rd
+    ]).s("tri")
+    */
+
     const query = (state) => {
       let input = scaleNameOrRatios.query(state);
 
