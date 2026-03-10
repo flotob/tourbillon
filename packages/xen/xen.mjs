@@ -132,6 +132,23 @@ export const xen = register(
   Could we run query for each? (could that be 'func' in this case?) 
   ----
   I don't think so, I think it makes more sense to do it within the query, but call an innerfunc on each arg
+  ----
+  Okay, working for strings.
+
+  How do you tell the different between these two inputs?
+
+  i("0 1").xen(`
+    1:1,
+    [13:12, 5:4],
+    2:1
+  `).piano().log()
+
+  i("0 1").xen(`
+    1:1,
+    13:12, 
+    5:4,
+    2:1
+  `).piano().log()
   */
     const query = (state) => {
       let args = scaleNameOrRatios.query(state);
