@@ -744,7 +744,7 @@ export const perlin = signal((t, controls) => _perlin(t, controls.randSeed));
 export const berlin = signal((t, controls) => _berlin(t, controls.randSeed));
 
 /**
- * `degradeByWith` is like `degradeBy`, but with more granular control.
+ * `degradeByWith` is like `degradeBy`, but with control over the random or other signal used to filter out the events.
  *
  * `degradeBy(x)` is essentially `degradeByWith(rand, x)`
  *
