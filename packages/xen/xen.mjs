@@ -11,10 +11,7 @@ import {
   removeUndefineds,
   Pattern,
   parray,
-  reify,
   State,
-  flatten,
-  Hap,
 } from '@strudel/core';
 import Tune from './tunejs.js';
 
