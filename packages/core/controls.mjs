@@ -2370,7 +2370,7 @@ export const { mode } = registerControl(['mode', 'anchor']);
  *
  * @name room
  * @tags orbit, superdough
- * @param {number | Pattern} level between 0 and 1
+ * @param {number | Pattern} level
  * @example
  * s("bd sd [~ bd] sd").room("<0 .2 .4 .6 .8 1>")
  * @example
