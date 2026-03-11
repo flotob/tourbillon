@@ -594,6 +594,7 @@ export const choose = (...xs) => chooseWith(rand, xs);
  *
  * @name chooseIn
  * @deprecated
+ * @tags temporal
  * @returns {Pattern}
  */
 export const chooseIn = (...xs) => chooseInWith(rand, xs);
