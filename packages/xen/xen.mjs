@@ -72,15 +72,6 @@ function xenOffset(xenScale, offset, index = 0) {
 
 const trimFreq = (freq) => parseFloat(freq.toPrecision(10));
 
-// accepts a scale name such as 31edo, and a pattern
-// pattern expected to follow format such that a value can be mapped
-// to an edostep within the scale. Returns the pattern with
-// values mapped to the frequencies associated with the given edosteps
-// scaleNameOrRatios: string || number[], steps?: number
-
-// old, currently unsupported
-// TODO support
-
 /**
  * Assumes a numerical pattern of scale steps, and a scale. Scales accepted are all preset scale names of `tune`, arbitrary edos such as 31edo, or an array of frequency ratios. Assumes scales repeat at octave (2/1). Returns a new pattern with all values mapped to their associated frequency, assuming a base frequency of 220hz.
  *
@@ -131,43 +122,7 @@ export const xen = register(
       });
     };
 
-    // TODO fix the following:
-    /* 
-    let p1 = i("0 1").xen("hexany15 hexany23")
-    let p2 = i("[0 1]").xen([
-      "[1:1 2:1]", // tonic
-      "5:4", // Major 3rd
-    ]).s("tri")
-
-    let p3 = i("[0 1]").xen([
-      "[<1:1 2:1>]", // tonic
-      "5:4", // Major 3rd
-    ]).s("tri")
-    */
-
     const query = (state) => {
-      // let input = scaleNameOrRatios.query(state);
-
-      // if (input.length == 0) return [];
-
-      // let scPat = input[0].value;
-      // let scs;
-      // if (typeof scPat == 'string') {
-      //   scs = input.map((x) => x.value);
-      // } else if (scPat.every((x) => typeof x == 'number')) {
-      //   scs = [scPat];
-      // } else {
-      //   scs = JIsc2(scPat).query(state);
-      // }
-
-      // outside should be haps
-      // which then queries the scales using their hap timespans
-
-      // input[0].value.forEach((inp, ith) => {
-      //   let smth = inp.query(state)
-      //   let scs = JIsc2(inp).query(state)
-
-      // let k = scs.map((sc, jth) => {
       let haps = pat.query(state);
       let resHaps = [];
 
@@ -207,7 +162,7 @@ export const xen = register(
           */
           let sc2 = JIsc2(sc).query(st);
 
-          let index = _mod(i, sc.length)
+          let index = _mod(i, sc.length);
           for (let j = 0; j < scaleByIndices[index].length; j++) {
             let scale = getXenScale(sc2[j].value);
             let freq = xenOffset(scale, parseNumeral(i));
@@ -242,50 +197,7 @@ export const xen = register(
         } else {
           throw new Error('failed to parse scale');
         }
-
-        /* 
-        We need to know: 
-          - How many Haps to make, given a scale index (i value) from a Hap from pat (sc can tell us)
-          - The whole scale, so the frequency can be set (sc2 can tell us)
-            - if sc2.length > 1, how do we deal?
-          - The frequency of the ith element of the scale, given a Hap (from pat) with i value of ith
-
-        The whole scale definitions in sc2 can be indexed by the index of Hap within sc:
-          
-        */
-
-        // if (typeof sc == 'string') {
-        //   scale = getXenScale(sc);
-        //   if (isEdo(sc)) {
-        //     edo = sc.match(/^([1-9]+[0-9]*)edo$/)[1];
-        //   }
-        //   hap = hap.setContext(hap.combineContext(input[ith]));
-        // } else if (Array.isArray(sc) && sc.every((x) => typeof x == 'number')) {
-        //   scale = getXenScale(sc);
-        // } else {
-        //   scale = getXenScale(sc.value);
-        //   for (let h of scPat[_mod(i, scale.length)].query(state)) {
-        //     let ts = hap.wholeOrPart().intersection(h.wholeOrPart());
-        //     if (ts == undefined) return undefined;
-        //     hap = hap.withSpan((x) => ts);
-        //     hap = hap.setContext(hap.combineContext(h));
-        //   }
-        // }
-        // let freq = xenOffset(scale, parseNumeral(i));
-        // // 10 is somewhat arbitrary
-        // freq = trimFreq(freq);
-        // hap.value = { ...otherValues, freq };
       });
-
-      // });
-      // return flatten(k);
-      // })
-
-      /* 
-    perhaps instead of 
-      return new Pattern(query)
-    we could do a join on scaleNameOrRatios which creates multiple patterns and then joins them
-    */
       return resHaps;
     };
     return new Pattern(query);
