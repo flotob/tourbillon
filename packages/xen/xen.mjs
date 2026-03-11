@@ -186,13 +186,16 @@ export const xen = register(
         // Format: An array of values
         // Each value is a pattern, representing an index on the scale
         let sc = scaleNameOrRatios.query(st);
-        // Check to see if input is attempting to be a named scale
+        // Check to see if input is attempting to be a named scale or a raw scale
         let isStr = typeof sc[0].value == 'string';
-        if (!isStr) {
+        let isRawScale = Array.isArray(sc[0].value) && sc[0].value.every((x) => typeof x == 'number');
+        if (!isStr && !isRawScale) {
           sc = sc[0].value;
+        } else if (isRawScale) {
+          sc = getXenScale(sc[0].value);
         }
 
-        if (!isStr) {
+        if (!isStr && !isRawScale) {
           let scaleByIndices = [];
           for (let j = 0; j < sc.length; j++) {
             scaleByIndices[j] = sc[j].query(st);
@@ -213,7 +216,13 @@ export const xen = register(
             newHap = newHap.setContext(newHap.combineContext(scaleByIndices[i][j]));
             resHaps.push(newHap);
           }
-        } else {
+        } else if (isRawScale) {
+          let freq = xenOffset(sc, parseNumeral(i));
+          let newHap = hap;
+          freq = trimFreq(freq);
+          newHap.value = { ...otherValues, freq };
+          resHaps.push(newHap);
+        } else if (isStr) {
           // scale is named scale(s)
           for (let j = 0; j < sc.length; j++) {
             let scaleName = sc[j].value;
@@ -229,6 +238,8 @@ export const xen = register(
             }
             resHaps.push(newHap);
           }
+        } else {
+          throw new Error('failed to parse scale');
         }
 
         /* 
