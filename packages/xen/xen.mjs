@@ -4,7 +4,18 @@ Copyright (C) 2022 Strudel contributors - see <https://codeberg.org/uzu/strudel/
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details. You should have received a copy of the GNU Affero General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { register, _mod, parseNumeral, removeUndefineds, Pattern, parray, reify, State, flatten } from '@strudel/core';
+import {
+  register,
+  _mod,
+  parseNumeral,
+  removeUndefineds,
+  Pattern,
+  parray,
+  reify,
+  State,
+  flatten,
+  Hap,
+} from '@strudel/core';
 import Tune from './tunejs.js';
 
 // returns a list of frequency ratios for given edo scale
@@ -135,67 +146,133 @@ export const xen = register(
     */
 
     const query = (state) => {
-      let input = scaleNameOrRatios.query(state);
+      // let input = scaleNameOrRatios.query(state);
 
-      if (input.length == 0) return [];
+      // if (input.length == 0) return [];
 
-      let scPat = input[0].value;
-      let scs;
-      if (typeof scPat == 'string') {
-        scs = input.map((x) => x.value);
-      } else if (scPat.every((x) => typeof x == 'number')) {
-        scs = [scPat];
-      } else {
-        scs = JIsc2(scPat).query(state);
-      }
+      // let scPat = input[0].value;
+      // let scs;
+      // if (typeof scPat == 'string') {
+      //   scs = input.map((x) => x.value);
+      // } else if (scPat.every((x) => typeof x == 'number')) {
+      //   scs = [scPat];
+      // } else {
+      //   scs = JIsc2(scPat).query(state);
+      // }
 
-      let k = scs.map((sc, ith) => {
-        let haps = pat
-          .withHap((hap) => {
-            let hVal = hap.value;
-            const isObject = typeof hVal === 'object';
-            if (!isObject) {
-              throw new Error(
-                `Expected hap to have control 'i' set, but received ${hap.value.i}, try wrapping input in i()`,
-              );
-            }
-            const { i, ...otherValues } = hVal;
-            let scale;
-            let edo = false;
-            if (typeof sc == 'string') {
-              scale = getXenScale(sc);
-              if (isEdo(sc)) {
-                edo = sc.match(/^([1-9]+[0-9]*)edo$/)[1];
-              }
-              hap = hap.setContext(hap.combineContext(input[ith]));
-            } else if (Array.isArray(sc) && sc.every((x) => typeof x == 'number')) {
-              scale = getXenScale(sc);
-            } else {
-              scale = getXenScale(sc.value);
-              for (let h of scPat[i].query(state)) {
-                hap = hap.setContext(hap.combineContext(h));
-              }
-            }
-            let freq = xenOffset(scale, parseNumeral(hVal.i));
-            // 10 is somewhat arbitrary
+      // outside should be haps
+      // which then queries the scales using their hap timespans
+
+      // input[0].value.forEach((inp, ith) => {
+      //   let smth = inp.query(state)
+      //   let scs = JIsc2(inp).query(state)
+
+      // let k = scs.map((sc, jth) => {
+      let haps = pat.query(state);
+      let resHaps = [];
+
+      haps.forEach((hap) => {
+        let hVal = hap.value;
+        const isObject = typeof hVal === 'object';
+        if (!isObject) {
+          throw new Error(
+            `Expected hap to have control 'i' set, but received ${hap.value.i}, try wrapping input in i()`,
+          );
+        }
+        const { i, ...otherValues } = hVal;
+        let edo = false;
+        let st = new State(hap.wholeOrPart().intersection(state.span), state.controls);
+
+        // Format: An array of values
+        // Each value is a pattern, representing an index on the scale
+        let sc = scaleNameOrRatios.query(st);
+        // Check to see if input is attempting to be a named scale
+        let isStr = typeof sc[0].value == 'string';
+        if (!isStr) {
+          sc = sc[0].value;
+        }
+
+        if (!isStr) {
+          let scaleByIndices = [];
+          for (let j = 0; j < sc.length; j++) {
+            scaleByIndices[j] = sc[j].query(st);
+          }
+          /* 
+          Format: An array of 1 or more Haps, each Hap has an array of values of 
+            one or more scale index definitions (contains whole scale)
+          Assumption: inner value array should be same length between each
+          */
+          let sc2 = JIsc2(sc).query(st);
+
+          for (let j = 0; j < scaleByIndices[i].length; j++) {
+            let scale = getXenScale(sc2[j].value);
+            let freq = xenOffset(scale, parseNumeral(i));
+            let newHap = hap;
             freq = trimFreq(freq);
-            hap.value = { ...otherValues, freq };
-            return edo ? hap.setContext({ ...hap.context, edoSize: edo }) : hap;
-          })
-          .query(state);
-        return removeUndefineds(haps);
+            newHap.value = { ...otherValues, freq };
+            newHap = newHap.setContext(newHap.combineContext(scaleByIndices[i][j]));
+            resHaps.push(newHap);
+          }
+        } else {
+          // scale is named scale(s)
+          for (let j = 0; j < sc.length; j++) {
+            let scale = getXenScale(sc[j].value);
+            let freq = xenOffset(scale, parseNumeral(i));
+            let newHap = hap;
+            freq = trimFreq(freq);
+            newHap.value = { ...otherValues, freq };
+            newHap = newHap.setContext(newHap.combineContext(sc[j]));
+            resHaps.push(newHap);
+          }
+        }
+
+        /* 
+        We need to know: 
+          - How many Haps to make, given a scale index (i value) from a Hap from pat (sc can tell us)
+          - The whole scale, so the frequency can be set (sc2 can tell us)
+            - if sc2.length > 1, how do we deal?
+          - The frequency of the ith element of the scale, given a Hap (from pat) with i value of ith
+
+        The whole scale definitions in sc2 can be indexed by the index of Hap within sc:
+          
+        */
+
+        // if (typeof sc == 'string') {
+        //   scale = getXenScale(sc);
+        //   if (isEdo(sc)) {
+        //     edo = sc.match(/^([1-9]+[0-9]*)edo$/)[1];
+        //   }
+        //   hap = hap.setContext(hap.combineContext(input[ith]));
+        // } else if (Array.isArray(sc) && sc.every((x) => typeof x == 'number')) {
+        //   scale = getXenScale(sc);
+        // } else {
+        //   scale = getXenScale(sc.value);
+        //   for (let h of scPat[_mod(i, scale.length)].query(state)) {
+        //     let ts = hap.wholeOrPart().intersection(h.wholeOrPart());
+        //     if (ts == undefined) return undefined;
+        //     hap = hap.withSpan((x) => ts);
+        //     hap = hap.setContext(hap.combineContext(h));
+        //   }
+        // }
+        // let freq = xenOffset(scale, parseNumeral(i));
+        // // 10 is somewhat arbitrary
+        // freq = trimFreq(freq);
+        // hap.value = { ...otherValues, freq };
+        return edo ? hap.setContext({ ...hap.context, edoSize: edo }) : hap;
       });
-      return flatten(k);
+
+      // });
+      // return flatten(k);
+      // })
+
+      /* 
+    perhaps instead of 
+      return new Pattern(query)
+    we could do a join on scaleNameOrRatios which creates multiple patterns and then joins them
+    */
+      return resHaps;
     };
-
-    /* 
-  perhaps instead of 
-    return new Pattern(query)
-  we could do a join on scaleNameOrRatios which creates multiple patterns and then joins them
-  */
-    let res = new Pattern(query);
-
-    return res;
+    return new Pattern(query);
   },
   false,
 );
