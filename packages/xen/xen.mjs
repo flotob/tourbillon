@@ -216,12 +216,17 @@ export const xen = register(
         } else {
           // scale is named scale(s)
           for (let j = 0; j < sc.length; j++) {
-            let scale = getXenScale(sc[j].value);
+            let scaleName = sc[j].value;
+            let scale = getXenScale(scaleName);
             let freq = xenOffset(scale, parseNumeral(i));
             let newHap = hap;
             freq = trimFreq(freq);
             newHap.value = { ...otherValues, freq };
             newHap = newHap.setContext(newHap.combineContext(sc[j]));
+            if (isEdo(scaleName)) {
+              edo = scaleName.match(/^([1-9]+[0-9]*)edo$/)[1];
+              newHap = newHap.setContext({ ...newHap.context, edoSize: edo });
+            }
             resHaps.push(newHap);
           }
         }
@@ -258,7 +263,6 @@ export const xen = register(
         // // 10 is somewhat arbitrary
         // freq = trimFreq(freq);
         // hap.value = { ...otherValues, freq };
-        return edo ? hap.setContext({ ...hap.context, edoSize: edo }) : hap;
       });
 
       // });
