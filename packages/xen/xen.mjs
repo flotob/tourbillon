@@ -207,13 +207,14 @@ export const xen = register(
           */
           let sc2 = JIsc2(sc).query(st);
 
-          for (let j = 0; j < scaleByIndices[i].length; j++) {
+          let index = _mod(i, sc.length)
+          for (let j = 0; j < scaleByIndices[index].length; j++) {
             let scale = getXenScale(sc2[j].value);
             let freq = xenOffset(scale, parseNumeral(i));
             let newHap = hap;
             freq = trimFreq(freq);
             newHap.value = { ...otherValues, freq };
-            newHap = newHap.setContext(newHap.combineContext(scaleByIndices[i][j]));
+            newHap = newHap.setContext(newHap.combineContext(scaleByIndices[index][j]));
             resHaps.push(newHap);
           }
         } else if (isRawScale) {
