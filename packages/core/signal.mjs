@@ -562,6 +562,9 @@ export const __chooseWith = (pat, xs) => {
  * @returns {Pattern}
  * @example
  * note("c2 g2!2 d2 f1").s(chooseWith(sine.fast(2), ["sawtooth", "triangle", "bd:6"]))
+ * @example
+ * // Compare with chooseInWith
+ * note(chooseWith("<0 0.5 1>*3", ["c3", "b3", "d3"]))
  */
 export const chooseWith = (pat, xs) => {
   return __chooseWith(pat, xs).outerJoin();
@@ -573,6 +576,13 @@ export const chooseWith = (pat, xs) => {
  * @tags temporal
  * @param {Pattern} pat
  * @param {*} xs
+ * @example
+ * // Because the structure comes from the chosen values (the notes, here)
+ * // The choosing pattern will only advance once per cycle (not 3 times per cycle)
+ * note(chooseInWith("<0 0.5 1>*3", ["c3", "b3", "d3"]))
+ * @example
+ * // Here, the chosen values have a structure such that the choosing pattern will advance 3 times per cycle
+ * note(chooseInWith("<0 0.5 1>*3", ["c3*3", "b3*3", "d3*3"]))
  * @returns {Pattern}
  */
 export const chooseInWith = (pat, xs) => {
@@ -588,16 +598,6 @@ export const chooseInWith = (pat, xs) => {
  * note("c2 g2!2 d2 f1").s(choose("sine", "triangle", "bd:6"))
  */
 export const choose = (...xs) => chooseWith(rand, xs);
-
-/**
- * Has no difference with `choose`
- *
- * @name chooseIn
- * @deprecated
- * @tags temporal
- * @returns {Pattern}
- */
-export const chooseIn = (...xs) => chooseInWith(rand, xs);
 
 /**
  * Chooses from the given list of values (or patterns of values), according

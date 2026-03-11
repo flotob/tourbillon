@@ -504,6 +504,8 @@ export class Pattern {
 
   /**
    * Returns a new pattern with the given function applied to the list of haps returned by every query.
+   *
+   * As an end user, you will most likely not need to use this; look at `withContext`, `withHapSpan`, etc. instead.
    * @tags internals
    * @param {Function} func
    * @returns Pattern
@@ -511,10 +513,13 @@ export class Pattern {
    * @example
    * note("[a b, c d] a b c d").s("gm_piano").withHaps(x=>{
    *   if (x.length > 1) {
-   *     x.map(hap=>{
-   *       // select gm_piano:1 sample
-   *       hap.value.n = 1
-   *     })
+   *     x = x.map(hap => hap.withValue(val => {
+   *       return {
+   *         n: 1,
+   *         // select gm_piano:1 sample
+   *         ...val
+   *       }
+   *     }));
    *   }
    *   return x
    * })
@@ -527,6 +532,8 @@ export class Pattern {
 
   /**
    * As with `withHaps`, but applies the function to every hap, rather than every list of haps.
+   *
+   * As an end user, you will most likely not need to use this; look at `withContext`, `withHapSpan`, etc. instead.
    * @tags internals
    * @param {Function} func
    * @returns Pattern
@@ -1211,7 +1218,7 @@ const COMPOSERS = {
   pow: [numeralArgs(Math.pow)],
   /**
    *
-   * Preforms a bitwise `and` on each number and the given factor
+   * Performs a bitwise `and` on each number and the given factor
    * @name band
    * @memberof Pattern
    * @tags math
@@ -1219,7 +1226,7 @@ const COMPOSERS = {
   band: [numeralArgs((a, b) => a & b)],
   /**
    *
-   * Preforms a bitwise `or` on each number and the given factor
+   * Performs a bitwise `or` on each number and the given factor
    * @name bor
    * @memberof Pattern
    * @tags math
@@ -1227,7 +1234,7 @@ const COMPOSERS = {
   bor: [numeralArgs((a, b) => a | b)],
   /**
    *
-   * Preforms a bitwise `xor` on each number and the given factor
+   * Performs a bitwise `xor` on each number and the given factor
    * @name bxor
    * @memberof Pattern
    * @tags math
@@ -1235,7 +1242,7 @@ const COMPOSERS = {
   bxor: [numeralArgs((a, b) => a ^ b)],
   /**
    *
-   * Preforms a bitwise `left shift` on each number by the given factor
+   * Performs a bitwise `left shift` on each number by the given factor
    * @name blshift
    * @memberof Pattern
    * @tags math
@@ -1243,7 +1250,7 @@ const COMPOSERS = {
   blshift: [numeralArgs((a, b) => a << b)],
   /**
    *
-   * Preforms a bitwise `right shift` on each number by the given factor
+   * Performs a bitwise `right shift` on each number by the given factor
    * @name brshift
    * @memberof Pattern
    * @tags math
@@ -1595,7 +1602,7 @@ export function stackRight(...pats) {
 }
 
 /**
- * The input patterns are aligned to the right, with silence padded to the shorter pattern(s) in the initial steps if there's a stepcount disparity. See also `stackLeft` and `stackCentre/stackCenter`
+ * The input patterns are aligned to the right, with silence padded to the shorter pattern(s) in the initial steps if there's a stepcount disparity. See also `stackLeft` and `stackRight`
  * @name stackCentre
  * @tags temporal, stepwise, combiners
  * @synonyms stackCenter
