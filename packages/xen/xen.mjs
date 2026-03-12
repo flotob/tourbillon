@@ -4,15 +4,7 @@ Copyright (C) 2022 Strudel contributors - see <https://codeberg.org/uzu/strudel/
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details. You should have received a copy of the GNU Affero General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import {
-  register,
-  _mod,
-  parseNumeral,
-  removeUndefineds,
-  Pattern,
-  parray,
-  State,
-} from '@strudel/core';
+import { register, _mod, parseNumeral, removeUndefineds, Pattern, parray, State } from '@strudel/core';
 import Tune from './tunejs.js';
 
 // returns a list of frequency ratios for given edo scale
@@ -70,7 +62,7 @@ function xenOffset(xenScale, offset, index = 0) {
 const trimFreq = (freq) => parseFloat(freq.toPrecision(10));
 
 /**
- * Assumes a numerical pattern of scale steps, and a scale. Scales accepted are all preset scale names of `tune`, arbitrary edos such as 31edo, or an array of frequency ratios. Assumes scales repeat at octave (2/1). Returns a new pattern with all values mapped to their associated frequency, assuming a base frequency of 220hz.
+ * Assumes a numerical pattern of scale steps, and a scale. Scales accepted are all preset scale names of `tune`, arbitrary edos such as 31edo, or an array of frequency ratios. Assumes scales repeat at octave (2/1). Returns a new pattern with all values mapped to their associated frequency, assuming a base frequency of 220hz. See first 4 examples for the different ways you can input a scale into `xen`
  *
  * @name xen
  * @returns Pattern
