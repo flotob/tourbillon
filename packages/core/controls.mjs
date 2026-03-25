@@ -1988,11 +1988,10 @@ export const { spread } = registerControl('spread');
  * Set dryness of reverb. See `room` and `size` for more information about reverb.
  *
  * @name dry
- * @tags superdirt
+ * @tags superdirt, superdough
  * @param {number | Pattern} dry 0 = wet, 1 = dry
  * @example
  * n("[0,3,7](3,8)").s("superpiano").room(.7).dry("<0 .5 .75 1>").osc()
- * @superdirtOnly
  *
  */
 export const { dry } = registerControl('dry');
