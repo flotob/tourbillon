@@ -599,7 +599,7 @@ export const chooseInWith = (pat, xs) => {
  */
 export const choose = (...xs) => chooseWith(rand, xs);
 
-export const chooseIn = (...xs) => chooseInWith(rand, xs); 
+export const chooseIn = (...xs) => chooseInWith(rand, xs);
 
 /**
  * Chooses from the given list of values (or patterns of values), according
