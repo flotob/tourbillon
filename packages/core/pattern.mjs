@@ -1258,15 +1258,105 @@ const COMPOSERS = {
   brshift: [numeralArgs((a, b) => a >> b)],
 
   // TODO - force numerical comparison if both look like numbers?
+  /**
+   * preforms a < b
+   * @name lt
+   * @memberof Pattern
+   * @tags math
+   * @param {any} a
+   * @param {any} b
+   * @returns Pattern with boolean value(s)
+   */
   lt: [(a, b) => a < b],
+  /**
+   * preforms a > b
+   * @name gt
+   * @memberof Pattern
+   * @tags math
+   * @param {any} a
+   * @param {any} b
+   * @returns Pattern with boolean value(s)
+   */
   gt: [(a, b) => a > b],
+  /**
+   * preforms a <= b
+   * @name lt
+   * @memberof Pattern
+   * @tags math
+   * @param {any} a
+   * @param {any} b
+   * @returns Pattern with boolean value(s)
+   */
   lte: [(a, b) => a <= b],
+  /**
+   * preforms a >= b
+   * @name lt
+   * @memberof Pattern
+   * @tags math
+   * @param {any} a
+   * @param {any} b
+   * @returns Pattern with boolean value(s)
+   */
   gte: [(a, b) => a >= b],
+  /**
+   * preforms a == b
+   * @name lt
+   * @memberof Pattern
+   * @tags math
+   * @param {any} a
+   * @param {any} b
+   * @returns Pattern with boolean value(s)
+   */
   eq: [(a, b) => a == b],
+  /**
+   * preforms a === b (strictly equal)
+   * @name lt
+   * @memberof Pattern
+   * @tags math
+   * @param {any} a
+   * @param {any} b
+   * @returns Pattern with boolean value(s)
+   */
   eqt: [(a, b) => a === b],
+  /**
+   * preforms a != b
+   * @name lt
+   * @memberof Pattern
+   * @tags math
+   * @param {any} a
+   * @param {any} b
+   * @returns Pattern with boolean value(s)
+   */
   ne: [(a, b) => a != b],
+  /**
+   * preforms a !== b (strictly not equal)
+   * @name lt
+   * @memberof Pattern
+   * @tags math
+   * @param {any} a
+   * @param {any} b
+   * @returns Pattern with boolean value(s)
+   */
   net: [(a, b) => a !== b],
+  /**
+   * preforms a && b
+   * @name lt
+   * @memberof Pattern
+   * @tags math
+   * @param {any} a
+   * @param {any} b
+   * @returns Pattern with boolean value(s)
+   */
   and: [(a, b) => a && b],
+  /**
+   * preforms a || b
+   * @name lt
+   * @memberof Pattern
+   * @tags math
+   * @param {any} a
+   * @param {any} b
+   * @returns Pattern with boolean value(s)
+   */
   or: [(a, b) => a || b],
 
   //  bitwise ops
@@ -1759,10 +1849,10 @@ export function arrange(...sections) {
  * @tags combiners
  * @return {Pattern}
  * @example
-seqPLoop(
-  [0, 2, "bd(3,8)"],
-  [1, 3, "cp(3,8)"]
-).sound()
+ * seqPLoop(
+ * [0, 2, "bd(3,8)"],
+ * [1, 3, "cp(3,8)"]
+ * ).sound()
  */
 export function seqPLoop(...parts) {
   let total = Fraction(0);
@@ -2433,11 +2523,11 @@ export const { zoomArc, zoomarc } = register(['zoomArc', 'zoomarc'], function (a
  * @param {number} slices to play
  * @example
  * note("0 1 2 3 4 5 6 7".scale('c:mixolydian'))
- *.bite(4, "3 2 1 0")
+ * .bite(4, "3 2 1 0")
  * @example
  * sound("bd - bd bd*2, - sd:6 - sd:5 sd:1 - [- sd:2] -, hh [- cp:7]")
-  .bank("RolandTR909").speed(1.2)
-  .bite(4, "0 0 [1 2] <3 2> 0 0 [2 1] 3")
+ * .bank("RolandTR909").speed(1.2)
+ * .bite(4, "0 0 [1 2] <3 2> 0 0 [2 1] 3")
  */
 export const bite = register(
   'bite',
@@ -3510,8 +3600,8 @@ export const shrinklist = (amount, pat) => pat.shrinklist(amount);
  * "tha dhi thom nam".shrink("1 -1").sound().bank("mridangam").pace(4)
  * @example
  * note("0 1 2 3 4 5 6 7".scale("C:ritusen")).sound("folkharp")
-   .shrink("1 -1").pace(8)
-
+ * .shrink("1 -1").pace(8)
+ *
  */
 
 export const shrink = register(
@@ -3550,7 +3640,7 @@ export const shrink = register(
  * "tha dhi thom nam".grow("1 -1").sound().bank("mridangam").pace(4)
  * @example
  * note("0 1 2 3 4 5 6 7".scale("C:ritusen")).sound("folkharp")
-   .grow("1 -1").pace(8)
+ * .grow("1 -1").pace(8)
  */
 
 export const grow = register(
@@ -3574,17 +3664,17 @@ export const grow = register(
 
 /**
  * *Experimental*
- * 
- * Inserts a pattern into a list of patterns. On the first repetition it will be inserted at the end of the list, then moved backwards through the list 
- * on successive repetitions. The patterns are added together stepwise, with all repetitions taking place over a single cycle. Using `pace` to set the 
+ *
+ * Inserts a pattern into a list of patterns. On the first repetition it will be inserted at the end of the list, then moved backwards through the list
+ * on successive repetitions. The patterns are added together stepwise, with all repetitions taking place over a single cycle. Using `pace` to set the
  * number of steps per cycle is therefore usually recommended.
  *
  * @tags stepwise
  * @return {Pattern}
  * @example
  * "[c g]".tour("e f", "e f g", "g f e c").note()
-   .sound("folkharp")
-   .pace(8)
+ * .sound("folkharp")
+ * .pace(8)
  */
 export const tour = function (pat, ...many) {
   return pat.tour(...many);
@@ -3602,16 +3692,16 @@ Pattern.prototype.tour = function (...many) {
 
 /**
  * *Experimental*
- * 
- * 'zips' together the steps of the provided patterns. This can create a long repetition, taking place over a single, dense cycle. 
+ *
+ * 'zips' together the steps of the provided patterns. This can create a long repetition, taking place over a single, dense cycle.
  * Using `pace` to set the number of steps per cycle is therefore usually recommended.
- * 
+ *
  * @tags stepwise
  * @returns {Pattern}
  * @example
  * zip("e f", "e f g", "g [f e] a f4 c").note()
-   .sound("folkharp")
-   .pace(8)
+ * .sound("folkharp")
+ * .pace(8)
  */
 export const zip = function (...pats) {
   pats = pats.filter((pat) => pat.hasSteps);
