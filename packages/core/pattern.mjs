@@ -1280,7 +1280,7 @@ const COMPOSERS = {
   gt: [(a, b) => a > b],
   /**
    * preforms a <= b
-   * @name lt
+   * @name lte
    * @memberof Pattern
    * @tags math
    * @param {any} a
@@ -1290,7 +1290,7 @@ const COMPOSERS = {
   lte: [(a, b) => a <= b],
   /**
    * preforms a >= b
-   * @name lt
+   * @name gte
    * @memberof Pattern
    * @tags math
    * @param {any} a
@@ -1300,7 +1300,7 @@ const COMPOSERS = {
   gte: [(a, b) => a >= b],
   /**
    * preforms a == b
-   * @name lt
+   * @name eq
    * @memberof Pattern
    * @tags math
    * @param {any} a
@@ -1310,7 +1310,7 @@ const COMPOSERS = {
   eq: [(a, b) => a == b],
   /**
    * preforms a === b (strictly equal)
-   * @name lt
+   * @name eqt
    * @memberof Pattern
    * @tags math
    * @param {any} a
@@ -1320,7 +1320,7 @@ const COMPOSERS = {
   eqt: [(a, b) => a === b],
   /**
    * preforms a != b
-   * @name lt
+   * @name ne
    * @memberof Pattern
    * @tags math
    * @param {any} a
@@ -1330,7 +1330,7 @@ const COMPOSERS = {
   ne: [(a, b) => a != b],
   /**
    * preforms a !== b (strictly not equal)
-   * @name lt
+   * @name net
    * @memberof Pattern
    * @tags math
    * @param {any} a
@@ -1340,7 +1340,7 @@ const COMPOSERS = {
   net: [(a, b) => a !== b],
   /**
    * preforms a && b
-   * @name lt
+   * @name and
    * @memberof Pattern
    * @tags math
    * @param {any} a
@@ -1350,7 +1350,7 @@ const COMPOSERS = {
   and: [(a, b) => a && b],
   /**
    * preforms a || b
-   * @name lt
+   * @name or
    * @memberof Pattern
    * @tags math
    * @param {any} a
