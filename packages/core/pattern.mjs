@@ -1202,8 +1202,8 @@ const COMPOSERS = {
   div: [numeralArgs((a, b) => a / b)],
   /**
    *
-   * Divides each number by the given factor.
-   * @name div
+   * Divides each number by the given factor and returns the remainder
+   * @name mod
    * @memberof Pattern
    * @tags math
    */
@@ -1259,7 +1259,7 @@ const COMPOSERS = {
 
   // TODO - force numerical comparison if both look like numbers?
   /**
-   * preforms a < b
+   * performs a < b
    * @name lt
    * @memberof Pattern
    * @tags math
@@ -1269,7 +1269,7 @@ const COMPOSERS = {
    */
   lt: [(a, b) => a < b],
   /**
-   * preforms a > b
+   * performs a > b
    * @name gt
    * @memberof Pattern
    * @tags math
@@ -1279,7 +1279,7 @@ const COMPOSERS = {
    */
   gt: [(a, b) => a > b],
   /**
-   * preforms a <= b
+   * performs a <= b
    * @name lte
    * @memberof Pattern
    * @tags math
@@ -1289,7 +1289,7 @@ const COMPOSERS = {
    */
   lte: [(a, b) => a <= b],
   /**
-   * preforms a >= b
+   * performs a >= b
    * @name gte
    * @memberof Pattern
    * @tags math
@@ -1299,7 +1299,7 @@ const COMPOSERS = {
    */
   gte: [(a, b) => a >= b],
   /**
-   * preforms a == b
+   * performs a == b
    * @name eq
    * @memberof Pattern
    * @tags math
@@ -1309,7 +1309,7 @@ const COMPOSERS = {
    */
   eq: [(a, b) => a == b],
   /**
-   * preforms a === b (strictly equal)
+   * performs a === b (strictly equal)
    * @name eqt
    * @memberof Pattern
    * @tags math
@@ -1319,7 +1319,7 @@ const COMPOSERS = {
    */
   eqt: [(a, b) => a === b],
   /**
-   * preforms a != b
+   * performs a != b
    * @name ne
    * @memberof Pattern
    * @tags math
@@ -1329,7 +1329,7 @@ const COMPOSERS = {
    */
   ne: [(a, b) => a != b],
   /**
-   * preforms a !== b (strictly not equal)
+   * performs a !== b (strictly not equal)
    * @name net
    * @memberof Pattern
    * @tags math
@@ -1339,7 +1339,7 @@ const COMPOSERS = {
    */
   net: [(a, b) => a !== b],
   /**
-   * preforms a && b
+   * performs a && b
    * @name and
    * @memberof Pattern
    * @tags math
@@ -1349,7 +1349,7 @@ const COMPOSERS = {
    */
   and: [(a, b) => a && b],
   /**
-   * preforms a || b
+   * performs a || b
    * @name or
    * @memberof Pattern
    * @tags math
