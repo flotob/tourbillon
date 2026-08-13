@@ -59,6 +59,11 @@ export const bjorklund = function (ons, steps) {
  * really useful for computer/algorithmic music because they can
  * describe a large number of rhythms with a couple of numbers.
  *
+ * A negative number of pulses inverts the pattern
+ * so pulses happen in the gaps of the normal euclidean rhythm.
+ *
+ * A negative number of steps changes it into `euclidLegato`.
+ *
  * @memberof Pattern
  * @name euclid
  * @tags temporal
@@ -138,6 +143,9 @@ const _euclidRot = function (pulses, steps, rotation) {
 };
 
 export const euclid = register('euclid', function (pulses, steps, pat) {
+  if (steps < 0) {
+    return _euclidLegato(pulses, -steps, 0, pat);
+  }
   return pat.struct(_euclidRot(pulses, steps, 0));
 });
 
@@ -150,12 +158,17 @@ export const bjork = register('bjork', function (euc, pat) {
 });
 
 export const { euclidrot, euclidRot } = register(['euclidrot', 'euclidRot'], function (pulses, steps, rotation, pat) {
+  if (steps < 0) {
+    return _euclidLegato(pulses, -steps, rotation, pat);
+  }
   return pat.struct(_euclidRot(pulses, steps, rotation));
 });
 
 /**
  * Similar to `euclid`, but each pulse is held until the next pulse,
  * so there will be no gaps.
+ *
+ * A negative number of steps changes it into `euclid`.
  * @name euclidLegato
  * @memberof Pattern
  * @tags temporal
@@ -168,26 +181,33 @@ export const { euclidrot, euclidRot } = register(['euclidrot', 'euclidRot'], fun
  */
 
 const _euclidLegato = function (pulses, steps, rotation, pat) {
-  if (pulses < 1) {
-    return silence;
-  }
-  const bin_pat = _euclidRot(pulses, steps, 0);
+  var bin_pat = _euclidRot(pulses, steps, 0);
+  // Because the `gapless` algorithm logic assumes the first entry in bin_pat is a 1,
+  // we rotate the pattern so the first onset is at the start.
+  const firstOnset = bin_pat.indexOf(1);
+  bin_pat = rotate(bin_pat, firstOnset);
+  steps = Math.abs(steps);
   const gapless = bin_pat
     .join('')
     .split('1')
     .slice(1)
     .map((s) => [s.length + 1, true]);
-  return pat.struct(timeCat(...gapless)).late(Fraction(rotation).div(steps));
+  return pat.struct(timeCat(...gapless)).late(Fraction(rotation + firstOnset).div(steps));
 };
 
 export const euclidLegato = register(['euclidLegato'], function (pulses, steps, pat) {
+  if (steps < 0) {
+    return pat.struct(_euclidRot(pulses, -steps, 0));
+  }
   return _euclidLegato(pulses, steps, 0, pat);
 });
 
 /**
  * Similar to `euclid`, but each pulse is held until the next pulse,
  * so there will be no gaps, and has an additional parameter for 'rotating'
- * the resulting sequence
+ * the resulting sequence.
+ *
+ * A negative number of steps changes it into `euclidRot`.
  * @name euclidLegatoRot
  * @memberof Pattern
  * @tags temporal
@@ -198,6 +218,9 @@ export const euclidLegato = register(['euclidLegato'], function (pulses, steps, 
  * note("c3").euclidLegatoRot(3,5,2)
  */
 export const euclidLegatoRot = register(['euclidLegatoRot'], function (pulses, steps, rotation, pat) {
+  if (steps < 0) {
+    return pat.struct(_euclidRot(pulses, -steps, rotation));
+  }
   return _euclidLegato(pulses, steps, rotation, pat);
 });
 
