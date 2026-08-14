@@ -28,31 +28,34 @@ export class Cyclist {
     this.started = false;
     this.beforeStart = beforeStart;
     this.cps = 0.5;
-    this.num_ticks_since_cps_change = 0;
+    this.checkpoint = {
+      // new checkpoints are created when there's a change in cps
+      cycles: 0, // number of cycles when cps was changed
+      seconds: 0, // clock phase when cps was changed
+    };
+    this.num_ticks_since_checkpoint = 0;
     this.lastTick = 0; // absolute time when last tick (clock callback) happened
     this.lastBegin = 0; // query begin of last tick
     this.lastEnd = 0; // query end of last tick
     this.getTime = getTime; // get absolute time
-    this.num_cycles_at_cps_change = 0;
-    this.seconds_at_cps_change; // clock phase when cps was changed
     this.onToggle = onToggle;
     this.latency = latency; // fixed trigger time offset
     this.clock = createClock(
       getTime,
       // called slightly before each cycle
       (phase, duration, _, t) => {
-        if (this.num_ticks_since_cps_change === 0) {
-          this.num_cycles_at_cps_change = this.lastEnd;
-          this.seconds_at_cps_change = phase;
+        if (this.num_ticks_since_checkpoint === 0) {
+          this.checkpoint = {
+            cycles: this.lastEnd,
+            seconds: phase,
+          };
         }
-        this.num_ticks_since_cps_change++;
-        const seconds_since_cps_change = this.num_ticks_since_cps_change * duration;
-        const num_cycles_since_cps_change = seconds_since_cps_change * this.cps;
+        this.num_ticks_since_checkpoint++;
 
         try {
-          const begin = this.lastEnd;
+          var begin = this.lastEnd;
           this.lastBegin = begin;
-          const end = this.num_cycles_at_cps_change + num_cycles_since_cps_change;
+          var end = this.checkpoint.cycles + this.num_ticks_since_checkpoint * duration * this.cps;
           this.lastEnd = end;
           this.lastTick = phase;
 
@@ -62,20 +65,59 @@ export class Cyclist {
             return;
           }
 
-          // query the pattern for events
-          const haps = this.pattern.queryArc(begin, end, { _cps: this.cps, cyclist: 'cyclist' });
+          var cpsChanged = false;
+          do {
+            cpsChanged = false;
 
-          haps.forEach((hap) => {
-            if (hap.hasOnset()) {
-              const targetTime =
-                (hap.whole.begin - this.num_cycles_at_cps_change) / this.cps + this.seconds_at_cps_change + latency;
-              onSchedule?.(hap, targetTime, this.cps);
-              if (hap.value.cps !== undefined && this.cps != hap.value.cps) {
-                this.cps = hap.value.cps;
-                this.num_ticks_since_cps_change = 0;
+            // query the pattern for events
+            const haps = this.pattern
+              .queryArc(begin, end, { _cps: this.cps, cyclist: 'cyclist' })
+              // Sort the haps based on their onset, so cps changes within the
+              // tick duration happen in the correct order.
+              .sort((a, b) => a.whole.begin.valueOf() - b.whole.begin.valueOf());
+
+            haps.forEach((hap) => {
+              if (hap.hasOnset()) {
+                const targetTime =
+                  (hap.whole.begin - this.checkpoint.cycles) / this.cps + this.checkpoint.seconds + latency;
+                onSchedule?.(hap, targetTime, this.cps);
+                if (hap.value.cps !== undefined && this.cps != hap.value.cps) {
+                  cpsChanged = true;
+                  this.cps = hap.value.cps;
+                  this.num_ticks_since_checkpoint = 0;
+                  this.checkpoint = {
+                    cycles: hap.whole.begin,
+                    // All checkpoint calculations happen without latency, so we
+                    // must compensate for the latency added to the targetTime.
+                    seconds: targetTime - latency,
+                  };
+                }
               }
+            });
+
+            // If there are any haps in the query that trigger changes to the
+            // cps that result in the pattern speeding up, the current cycle end
+            // may not capture all the haps that need to be scheduled.
+            // If this is the case, we repeat the query + scheduling with a
+            // newly calculated end time.
+            // This process can repeat multiple times until no additional
+            // changes to the cps are triggered.
+            // In practice, this doesn't happen more than once during a tick.
+            if (cpsChanged) {
+              begin = end;
+              const targetEndTime = phase + duration;
+              const remainingSecondsSinceCheckpoint = targetEndTime - this.checkpoint.seconds;
+              const remainingCycles = remainingSecondsSinceCheckpoint * this.cps;
+              end = this.checkpoint.cycles + remainingCycles;
+              if (end < begin) {
+                // If the new end is before the old end this means the track
+                // slowed down, so we don't need to schedule additional haps.
+                // Otherwise, schedule the remaining events.
+                break;
+              }
+              this.lastEnd = end;
             }
-          });
+          } while (cpsChanged);
         } catch (e) {
           errorLogger(e);
           onError?.(e);
@@ -101,8 +143,11 @@ export class Cyclist {
   }
   async start() {
     await this.beforeStart?.();
-    this.num_ticks_since_cps_change = 0;
-    this.num_cycles_at_cps_change = 0;
+    this.checkpoint = {
+      cycles: 0,
+      seconds: 0,
+    };
+    this.num_ticks_since_checkpoint = 0;
     if (!this.pattern) {
       throw new Error('Scheduler: no pattern set! call .setPattern first.');
     }
@@ -132,7 +177,7 @@ export class Cyclist {
       return;
     }
     this.cps = cps;
-    this.num_ticks_since_cps_change = 0;
+    this.num_ticks_since_checkpoint = 0;
   }
   log(begin, end, haps) {
     const onsets = haps.filter((h) => h.hasOnset());
