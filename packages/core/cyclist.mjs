@@ -82,10 +82,10 @@ export class Cyclist {
                 // are adjusted accordingly.
                 if (aBegin === bBegin) {
                   if (a.value.cps !== undefined) {
-                    return b.value.cps !== undefined ? 0 : 1;
+                    return b.value.cps !== undefined ? 0 : -1;
                   }
                   if (b.value.cps !== undefined) {
-                    return -1;
+                    return 1;
                   }
                   return 0;
                 }
