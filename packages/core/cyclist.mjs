@@ -65,6 +65,8 @@ export class Cyclist {
             return;
           }
 
+          const tickEndTime = phase + duration;
+
           var cpsChanged = false;
           do {
             cpsChanged = false;
@@ -94,8 +96,14 @@ export class Cyclist {
 
             haps.forEach((hap) => {
               if (hap.hasOnset()) {
-                const targetTime =
-                  (hap.whole.begin - this.checkpoint.cycles) / this.cps + this.checkpoint.seconds + latency;
+                const targetTime = (hap.whole.begin - this.checkpoint.cycles) / this.cps + this.checkpoint.seconds;
+                if (tickEndTime < targetTime) {
+                  // If the targetTime exceeds the tickEndTime, this means
+                  // the cps has slowed down, and the latter haps from the query
+                  // no longer fall within the window of the current tick.
+                  // They'll be scheduled during the next tick.
+                  return;
+                }
                 onSchedule?.(hap, targetTime, this.cps);
                 if (hap.value.cps !== undefined && this.cps != hap.value.cps) {
                   cpsChanged = true;
@@ -103,9 +111,7 @@ export class Cyclist {
                   this.num_ticks_since_checkpoint = 0;
                   this.checkpoint = {
                     cycles: hap.whole.begin,
-                    // All checkpoint calculations happen without latency, so we
-                    // must compensate for the latency added to the targetTime.
-                    seconds: targetTime - latency,
+                    seconds: targetTime,
                   };
                 }
               }
@@ -121,17 +127,16 @@ export class Cyclist {
             // In practice, this doesn't happen more than once during a tick.
             if (cpsChanged) {
               begin = end;
-              const targetEndTime = phase + duration;
-              const remainingSecondsSinceCheckpoint = targetEndTime - this.checkpoint.seconds;
+              const remainingSecondsSinceCheckpoint = tickEndTime - this.checkpoint.seconds;
               const remainingCycles = remainingSecondsSinceCheckpoint * this.cps;
               end = this.checkpoint.cycles + remainingCycles;
+              this.lastEnd = end;
               if (end < begin) {
                 // If the new end is before the old end this means the track
                 // slowed down, so we don't need to schedule additional haps.
                 // Otherwise, schedule the remaining events.
                 break;
               }
-              this.lastEnd = end;
             }
           } while (cpsChanged);
         } catch (e) {
