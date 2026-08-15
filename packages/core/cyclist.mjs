@@ -74,7 +74,23 @@ export class Cyclist {
               .queryArc(begin, end, { _cps: this.cps, cyclist: 'cyclist' })
               // Sort the haps based on their onset, so cps changes within the
               // tick duration happen in the correct order.
-              .sort((a, b) => a.whole.begin.valueOf() - b.whole.begin.valueOf());
+              .sort((a, b) => {
+                const aBegin = a.whole.begin.valueOf();
+                const bBegin = b.whole.begin.valueOf();
+                // If haps happen at the same time, trigger the haps that cause
+                // cps changes first, so the durations of the simultaneous haps
+                // are adjusted accordingly.
+                if (aBegin === bBegin) {
+                  if (a.value.cps !== undefined) {
+                    return b.value.cps !== undefined ? 0 : 1;
+                  }
+                  if (b.value.cps !== undefined) {
+                    return -1;
+                  }
+                  return 0;
+                }
+                return aBegin - bBegin;
+              });
 
             haps.forEach((hap) => {
               if (hap.hasOnset()) {
