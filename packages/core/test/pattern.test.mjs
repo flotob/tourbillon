@@ -1320,6 +1320,14 @@ describe('Pattern', () => {
       );
     });
   });
+  describe('cyclestruct', () => {
+    it('can play a melody with a structure', () => {
+      sameFirst(
+        slowcat(0, 1, 2, 3, 4, 5).cyclestruct(fastcat(true, silence, fastcat(true, true)).fast(2)),
+        fastcat(0, silence, fastcat(1, 2), 3, silence, fastcat(4, 5)),
+      );
+    });
+  });
   describe('unjoin', () => {
     it('destructures a pattern into subcycles', () => {
       sameFirst(

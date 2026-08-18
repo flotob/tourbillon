@@ -2326,6 +2326,51 @@ export const bite = register(
 );
 
 /**
+ * Similar to `struct`, but every hap in the struct pattern plays the next
+ * cycle of the main pattern.
+ * @tags temporal
+ * @name cyclestruct
+ * @memberof Pattern
+ * @param {Pattern} structure structure of the pattern
+ * @example
+ * "<0 1 2 3 4 5>".cyclestruct("[x - x*2]*2").n().scale("c:major")
+ * // the same as "0 - [1 2] 3 - [4 5]".n().scale("c:major")
+ */
+export const { cyclestruct, cycleStruct } = register(
+  ['cyclestruct', 'cycleStruct'],
+  (structure, pat) => {
+    const structPat = new Pattern((state) => {
+      const haps_cycle = structure
+        .withQuerySpan((span) => span.begin.wholeCycle())
+        .query(state)
+        .filter((hap) => hap.value != 0)
+        .sort((a, b) => a.whole.begin - b.whole.begin)
+        .map((hap, i) => hap.withValue((_) => i));
+
+      const haps = [];
+      for (const hap of haps_cycle) {
+        const new_part = state.span.intersection(hap.part);
+        if (new_part) {
+          haps.push(new Hap(hap.whole, new_part, hap.value, hap.context));
+        }
+      }
+      return haps;
+    }).splitQueries();
+
+    const stepsPattern = new Pattern((state) => {
+      const nrHaps = structure
+        .withQuerySpan((span) => span.begin.wholeCycle())
+        .query(state)
+        .filter((hap) => hap.value != 0).length;
+      return [new Hap(state.span.begin.wholeCycle(), state.span, nrHaps, {})];
+    }).splitQueries();
+
+    return pat.fast(stepsPattern).bite(stepsPattern, structPat);
+  },
+  false,
+);
+
+/**
  * Selects the given fraction of the pattern and repeats that part to fill the remainder of the cycle.
  * @tags temporal
  * @param {number} fraction fraction to select
