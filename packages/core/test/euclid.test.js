@@ -139,7 +139,7 @@ describe('euclidLegato', () => {
         .euclidLegato(5, 4)
         .fast(2)
         .firstCycle()
-        .filter(hap => hap.hasOnset())
+        .filter((hap) => hap.hasOnset())
         .sort((a, b) => a.part.begin.sub(b.part.begin))
         .map((a) => a.showWhole(true)),
     ).toStrictEqual(['0/1 → 1/4: a', '1/4 → 3/8: a', '3/8 → 5/8: a', '5/8 → 3/4: a', '3/4 → 1/1: a']);
