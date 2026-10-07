@@ -886,6 +886,10 @@ export class Pattern {
     return stackRight(this, ...pats);
   }
 
+  stackCenter(...pats) {
+    return stackCenter(this, ...pats);
+  }
+
   stackCentre(...pats) {
     return stackCentre(this, ...pats);
   }
@@ -1666,7 +1670,7 @@ function _stackWith(func, pats) {
 }
 
 /**
- * The input patterns are aligned to the left, with silence padded to the shorter pattern(s) in the final steps if there's a stepcount disparity. See also `stackRight` and `stackCentre/stackCenter`
+ * The input patterns are aligned to the left, with silence padded to the shorter pattern(s) in the final steps if there's a stepcount disparity. See also `stackRight` and `stackCenter/stackCentre`
  *
  * @name stackLeft
  * @tags temporal, stepwise, combiners
@@ -1685,7 +1689,7 @@ export function stackLeft(...pats) {
 }
 
 /**
- * The input patterns are aligned to the right, with silence padded to the shorter pattern(s) in the initial steps if there's a stepcount disparity. See also `stackLeft` and `stackCentre/stackCenter`
+ * The input patterns are aligned to the right, with silence padded to the shorter pattern(s) in the initial steps if there's a stepcount disparity. See also `stackLeft` and `stackCenter/stackCentre`
  *
  * @name stackRight
  * @tags temporal, stepwise, combiners
@@ -1705,17 +1709,17 @@ export function stackRight(...pats) {
 
 /**
  * The input patterns are aligned to the right, with silence padded to the shorter pattern(s) in the initial steps if there's a stepcount disparity. See also `stackLeft` and `stackRight`
- * @name stackCentre
+ * @name stackCenter
  * @tags temporal, stepwise, combiners
- * @synonyms stackCenter
+ * @synonyms stackCentre
  * @return {Pattern}
  * @example
- * stackCentre("0 1 2 3", "3 4", "[4 5 6] 7 8 9 10").scale("c:minor").note()
+ * stackCenter("0 1 2 3", "3 4", "[4 5 6] 7 8 9 10").scale("c:minor").note()
  * @example
  * // chainable
- * "0 1 2 3".stackCentre("3 4", "[4 5 6] 7 8 9 10").scale("c:minor").note()
+ * "0 1 2 3".stackCenter("3 4", "[4 5 6] 7 8 9 10").scale("c:minor").note()
  */
-export function stackCentre(...pats) {
+export function stackCenter(...pats) {
   return _stackWith(
     (steps, pats) =>
       pats.map((pat) => {
@@ -1729,8 +1733,8 @@ export function stackCentre(...pats) {
   );
 }
 
-export function stackCenter(pats) {
-  return stackCentre(pats);
+export function stackCentre(...pats) {
+  return stackCenter(...pats);
 }
 
 /**

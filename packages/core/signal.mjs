@@ -6,6 +6,7 @@ This program is free software: you can redistribute it and/or modify it under th
 
 import { Hap } from './hap.mjs';
 import { Pattern, fastcat, pure, register, reify, silence, stack, sequenceP, isPattern } from './pattern.mjs';
+import { _mod } from './util.mjs';
 import Fraction from './fraction.mjs';
 
 import { id, keyAlias, getCurrentKeyboardState } from './util.mjs';
