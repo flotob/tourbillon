@@ -44,6 +44,25 @@ export function LogoButton({ context, isEmbedded }) {
 
 export function MainPanel({ context, isEmbedded = false, className }) {
   const { isZen, isButtonRowHidden, fontFamily } = useSettings();
+  let loc = window.location;
+  let ver = 'unofficial';
+  let hot = false;
+  let b = loc.hostname.match(/^(.+)\.(strudel)/);
+  if (/(strudel.cc$)/.test(loc.hostname)) {
+    // if there's no text before 'strudel', it's warm, otherwise use the text before strudel
+    ver = b ? b[1] : 'warm';
+  } else {
+    // match both versions of localhost
+    if (/(localhost)|(127.0.0.1)/.test(loc.hostname)) ver = 'dev';
+  }
+  let pr = ver.match(/pr-([0-9]+)/);
+  if (pr) {
+    pr = pr[1];
+    ver = `hot: ${pr}`;
+    hot = true;
+    pr = `https://codeberg.org/uzu/strudel/pulls/${pr}`;
+  }
+
   return (
     <nav
       id="header"
@@ -72,6 +91,13 @@ export function MainPanel({ context, isEmbedded = false, className }) {
               <div className="space-x-2 flex items-baseline">
                 <span className="hidden sm:block">strudel</span>
                 <span className="text-sm font-medium hidden sm:block">REPL</span>
+                {!hot ? (
+                  <span className="text-sm font-medium hidden sm:block">({ver})</span>
+                ) : (
+                  <a className="hover:opacity-50" href={pr} target="_blank">
+                    <span className="text-sm font-medium hidden sm:block">({ver})</span>
+                  </a>
+                )}
               </div>
             )}
           </h1>

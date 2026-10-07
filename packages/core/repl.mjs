@@ -307,8 +307,12 @@ export function repl({
 
   let allTransforms = [];
   /**
-   * Applies a function to all the running patterns. Note that the patterns are groups together into a single `stack` before the function is applied. This is probably what you want, but see `each` for
+   * Applies a function to all the running patterns. Note that the patterns are grouped together into a single `stack` before the function is applied. This is probably what you want, but see `each` for
    * a version that applies the function to each pattern separately.
+   *
+   * **Note:** Patterns must be labeled (e.g. with `$:`) to be picked up by `all`. An unlabeled
+   * pattern such as `note("c4")` is not registered and will produce no audio when `all` is present.
+   * Use `$: note("c4")` instead.
    * ```
    * $: sound("bd - cp sd")
    * $: sound("hh*8")
@@ -328,6 +332,9 @@ export function repl({
   };
   /** Applies a function to each of the running patterns separately. This is intended for future use with upcoming 'stepwise' features. See `all` for a version that applies the function to all the patterns stacked together into a single pattern.
    *
+   * **Note:** Patterns must be labeled (e.g. with `$:`) to be picked up by `each`. An unlabeled
+   * pattern such as `note("c4")` is not registered and will produce no audio when `each` is present.
+   * Use `$: note("c4")` instead.
    * ```
    * $: sound("bd - cp sd")
    * $: sound("hh*8")

@@ -98,6 +98,7 @@ export const SIDEBAR: Sidebar = {
       { text: 'Random Modifiers', link: 'learn/random-modifiers' },
       { text: 'Conditional Modifiers', link: 'learn/conditional-modifiers' },
       { text: 'Accumulation', link: 'learn/accumulation' },
+      { text: 'LFOs', link: 'learn/lfo' },
       { text: 'Tonal Functions', link: 'learn/tonal' },
       { text: 'Stepwise Functions', link: 'learn/stepwise' },
     ],

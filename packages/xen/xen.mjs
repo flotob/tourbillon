@@ -149,6 +149,7 @@ export const withBase = register('withBase', (b, pat) => {
       let hVal = hap.value;
       const isObject = typeof hVal === 'object';
       let freq = isObject ? hVal.freq : hVal;
+      if (!freq) return hap;
       freq = (freq * base) / originalBase;
       hap.value = isObject ? { ...hap.value, freq } : { freq };
       return hap;

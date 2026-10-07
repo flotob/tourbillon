@@ -444,13 +444,15 @@ export class StrudelMirror {
       this.setFontSize(value);
     }
   }
-  setCode(code) {
-    const changes = {
-      from: 0,
-      to: this.editor.state.doc.length,
-      insert: code,
-    };
+  replaceCode(code, from, to) {
+    const changes = { from, to, insert: code };
     this.editor.dispatch({ changes });
+  }
+  insertCode(code, position) {
+    this.replaceCode(code, position, position);
+  }
+  setCode(code) {
+    this.replaceCode(code, 0, this.editor.state.doc.length);
   }
   // used for debugging but could serve other purposes
   getActiveWidgets() {

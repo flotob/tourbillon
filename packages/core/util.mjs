@@ -149,11 +149,7 @@ export const getFrequency = (hap) => {
     if (value.freq) {
       return value.freq;
     }
-    let v = value.note || value.n || value.value;
-    if (typeof v === 'number') {
-      return midiToFreq(v);
-    }
-    return midiToFreq(noteToMidi(v));
+    return getFreq(value.note ?? value.n ?? value.value);
   }
   if (typeof value === 'number' && context.type !== 'frequency') {
     value = midiToFreq(value);
