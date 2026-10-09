@@ -75,6 +75,10 @@ const sameFirst = (a, b) => {
   return expect(a.sortHapsByPart().firstCycle()).toStrictEqual(b.sortHapsByPart().firstCycle());
 };
 
+const sameFirstX = (x, a, b) => {
+  return expect(a.fast(x).sortHapsByPart().firstCycle()).toStrictEqual(b.fast(x).sortHapsByPart().firstCycle());
+};
+
 describe('TimeSpan', () => {
   describe('equals()', () => {
     it('Should be equal to the same value', () => {
@@ -1320,11 +1324,18 @@ describe('Pattern', () => {
       );
     });
   });
-  describe('cyclestruct', () => {
+  describe('isobite', () => {
     it('can play a melody with a structure', () => {
       sameFirst(
-        slowcat(0, 1, 2, 3, 4, 5).cyclestruct(fastcat(true, silence, fastcat(true, true)).fast(2)),
-        fastcat(0, silence, fastcat(1, 2), 3, silence, fastcat(4, 5)),
+        slowcat(0, 1, 2, 3, 4, 5).isobite(fastcat(true, silence, [true, true]).fast(2)),
+        fastcat(0, silence, [1, 2], 3, silence, [4, 5]),
+      );
+    });
+    it('syncopates over multiple cycles if the number of haps in the patterns differ', () => {
+      sameFirstX(
+        4,
+        slowcat(0, 1, 2, 3).isobite(fastcat(true, [true, true])),
+        slowcat(0, [1, 2], 3, [0, 1], 2, [3, 0], 1, [2, 3]).fast(2),
       );
     });
   });
