@@ -1449,7 +1449,19 @@ export function sequenceP(pats) {
 export function stack(...pats) {
   // Array test here is to avoid infinite recursions..
   pats = pats.map((pat) => (Array.isArray(pat) ? sequence(...pat) : reify(pat)));
-  const query = (state) => flatten(pats.map((pat) => pat.query(state)));
+  const query = (state) =>
+    flatten(
+      pats.map((pat) => {
+        try {
+          // An error occurring in one part of the stack should not break
+          // playback of the other parts of the stack.
+          return pat.query(state);
+        } catch (e) {
+          errorLogger(e);
+          return [];
+        }
+      }),
+    );
   const result = new Pattern(query);
   if (__steps) {
     result._steps = lcm(...pats.map((pat) => pat._steps));
