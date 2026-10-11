@@ -8,6 +8,7 @@ import {
   setPattern as exposeSchedulerPattern,
   setTime,
   setSchedulerFunc,
+  setClockTime,
 } from './schedulerState.mjs';
 import { evalScope } from './evaluate.mjs';
 import { register, Pattern, isPattern, silence, stack } from './pattern.mjs';
@@ -224,6 +225,7 @@ export function repl({
     return pattern;
   };
   setTime(() => scheduler.now()); // TODO: refactor?
+  setClockTime(() => scheduler.getTime()); // TODO: refactor?
 
   // Helper function to apply pattern transformations (solo, each, all)
   // this should be abstracted more
@@ -407,6 +409,7 @@ export function repl({
       updateState({ code, pending: true });
       await injectPatternMethods();
       setTime(() => scheduler.now()); // TODO: refactor?
+      setClockTime(() => scheduler.getTime()); // TODO: refactor?
       await beforeEval?.({ code, blockBased: false });
       allTransforms = []; // reset all transforms
 
@@ -452,6 +455,7 @@ export function repl({
       updateState({ code, pending: true });
       await injectPatternMethods();
       setTime(() => scheduler.now()); // TODO: refactor?
+      setClockTime(() => scheduler.getTime()); // TODO: refactor?
       await beforeEval?.({ code, blockBased: true });
       allTransforms = []; // reset all transforms
 

@@ -32,7 +32,6 @@ const hap2value = (hap) => {
 };
 
 // uses more precise, absolute t if available, see https://github.com/tidalcycles/strudel/pull/1004
-// TODO: refactor output callbacks to eliminate deadline
 export const webaudioOutput = (hap, t, cps) => {
   const hapDuration = hap.duration / cps;
   return superdough(hap2value(hap), t, hapDuration, cps, hap.whole?.begin.valueOf());
@@ -286,7 +285,7 @@ function writeString(view, offset, string) {
  */
 Pattern.prototype.onTriggerTime = function (func) {
   return this.onSchedule((hap, targetTime) => {
-    const diff = targetTime - getAudioContext().currentTime;
+    const diff = targetTime - strudel.getClockTime();
     window.setTimeout(() => {
       func(hap);
     }, diff * 1000);

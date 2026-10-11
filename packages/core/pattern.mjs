@@ -27,7 +27,7 @@ import {
 import drawLine from './drawLine.mjs';
 import { errorLogger, logger } from './logger.mjs';
 import { strudelScope } from './evaluate.mjs';
-import { getTime } from './schedulerState.mjs';
+import { getClockTime } from './schedulerState.mjs';
 
 let stringParser;
 
@@ -951,7 +951,7 @@ export class Pattern {
   onTrigger(onTrigger, dominant = true) {
     console.warn('onTrigger is deprecated.. use onSchedule(hap, time, cps) instead');
     return this.onSchedule((hap, t, cps) => {
-      const currentTime = getTime();
+      const currentTime = getClockTime();
       return onTrigger(hap, currentTime, cps, t);
     }, dominant);
   }

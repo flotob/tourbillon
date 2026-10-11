@@ -26,6 +26,23 @@ export function setTime(func) {
   time = func;
 }
 
+let clockTime;
+/**
+ * @name getClockTime
+ * @tags internals
+ * @returns {Number} the current clock time in seconds (onSchedule time)
+ */
+export function getClockTime() {
+  if (!clockTime) {
+    throw new Error('no clockTime set! use setClockTime to define a time source');
+  }
+  return clockTime();
+}
+
+export function setClockTime(func) {
+  clockTime = func;
+}
+
 export function setCpsFunc(func) {
   cpsFunc = func;
 }

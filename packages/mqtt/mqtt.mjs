@@ -4,7 +4,7 @@ Copyright (C) 2022 Strudel contributors - see <https://codeberg.org/uzu/strudel/
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details. You should have received a copy of the GNU Affero General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { Pattern, getTime, createParams } from '@strudel/core';
+import { Pattern, getClockTime, createParams } from '@strudel/core';
 import Paho from 'paho-mqtt';
 
 const connections = {};
@@ -108,7 +108,7 @@ Pattern.prototype.mqtt = function (
     message = new Paho.Message(message);
     message.destinationName = msg_topic;
 
-    const offset = (targetTime - getTime() + latency) * 1000;
+    const offset = (targetTime - getClockTime() + latency) * 1000;
 
     window.setTimeout(function () {
       cx.send(message);
