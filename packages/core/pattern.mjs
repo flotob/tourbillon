@@ -2568,6 +2568,74 @@ export const bite = register(
 );
 
 /**
+ * Similar to `struct`, but every hap in the structure pattern plays the next
+ * cycle of the main pattern.
+ * With a different number of cycles in the main pattern and haps in the
+ * structure pattern, this creates an isorhythm.
+ *
+ * Note: This function works on the assumption that the structure pattern
+ * repeats every cycle. If the structure pattern only repeats after multiple
+ * cycles, it may skip or repeat certain parts of the melody.
+ * @tags temporal
+ * @name isobite
+ * @synonyms cycleStruct, cyclestruct
+ * @memberof Pattern
+ * @param {Pattern} structure structure of the pattern
+ * @example
+ * "<0 1 2 3 4 5>".isobite("[x - x*2]*2").n().scale("c:major")
+ * // the same as "0 - [1 2] 3 - [4 5]".n().scale("c:major")
+ *
+ * @example
+ * "<0 1 2 3 4>".isobite("x - x").n().scale("c:major")
+ * // the same as "<[0 - 1] [2 - 3] [4 - 0] [1 - 2] [3 - 4]>".n().scale("c:major")
+ *
+ * @example
+ * // Here the structure pattern repeats after 2 cycles,
+ * // so certain haps from the melody are skipped.
+ * "<0 1 2 3>".isobite("x x*2".slow(2)).n().scale("c:major")
+ * // the same as "<[0] [2 3] [2] [2 3]>".n().scale("c:major")
+ *
+ * @example
+ * // This can be avoided by making the struct pattern 1 cycle,
+ * // and slowing the whole pattern down as follows:
+ * "<0 1 2 3>".isobite("x x*2").slow(2).n().scale("c:major")
+ * // the same as "<[0] [1 2] [3] [0 1] [2] [3 0] [1] [2 3]>".n().scale("c:major")
+ */
+export const { isobite, cyclestruct, cycleStruct } = register(
+  ['isobite', 'cyclestruct', 'cycleStruct'],
+  (structure, pat) => {
+    const structPat = new Pattern((state) => {
+      const haps_cycle = structure
+        .withQuerySpan((span) => span.begin.wholeCycle())
+        .query(state)
+        .filter((hap) => hap.value != 0)
+        .sort((a, b) => a.whole.begin - b.whole.begin)
+        .map((hap, i) => hap.withValue((_) => i));
+
+      const haps = [];
+      for (const hap of haps_cycle) {
+        const new_part = state.span.intersection(hap.part);
+        if (new_part) {
+          haps.push(new Hap(hap.whole, new_part, hap.value, hap.context));
+        }
+      }
+      return haps;
+    }).splitQueries();
+
+    const stepsPattern = new Pattern((state) => {
+      const nrHaps = structure
+        .withQuerySpan((span) => span.begin.wholeCycle())
+        .query(state)
+        .filter((hap) => hap.value != 0).length;
+      return [new Hap(state.span.begin.wholeCycle(), state.span, nrHaps, {})];
+    }).splitQueries();
+
+    return pat.fast(stepsPattern).bite(stepsPattern, structPat);
+  },
+  false,
+);
+
+/**
  * Selects the given fraction of the pattern and repeats that part to fill the remainder of the cycle.
  * @tags temporal
  * @param {number} fraction fraction to select
