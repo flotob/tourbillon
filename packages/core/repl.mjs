@@ -7,7 +7,7 @@ import {
   setIsStarted,
   setPattern as exposeSchedulerPattern,
   setTime,
-  setSchedulerFunc,
+  setScheduleFunc,
   setClockTime,
 } from './schedulerState.mjs';
 import { evalScope } from './evaluate.mjs';
@@ -62,7 +62,7 @@ export function repl({
   };
 
   const schedulerOptions = {
-    onSchedule: getScheduler({ onSchedule }),
+    onSchedule: getSchedule({ onSchedule }),
     getTime,
     onToggle: (started) => {
       updateState({ started });
@@ -80,7 +80,7 @@ export function repl({
   // NeoCyclist uses a shared worker to communicate between instances, which is not supported on mobile chrome
   const scheduler =
     sync && typeof SharedWorker != 'undefined' ? new NeoCyclist(schedulerOptions) : new Cyclist(schedulerOptions);
-  setSchedulerFunc(schedulerOptions.onSchedule);
+  setScheduleFunc(schedulerOptions.onSchedule);
   setCpsFunc(() => scheduler.cps);
   let pPatterns = {};
   let anonymousIndex = 0;
@@ -570,17 +570,17 @@ export function repl({
   return { scheduler, evaluate, evaluateBlock, start, stop, pause, setCps, setPattern, setCode, toggle, state };
 }
 
-export const getScheduler =
+export const getSchedule =
   ({ onSchedule }) =>
   async (hap, t, cps) => {
     try {
-      if (!hap.context.onSchedule || !hap.context.dominantScheduler) {
+      if (!hap.context.onSchedule || !hap.context.dominantSchedule) {
         await onSchedule(hap, t, cps);
       }
       if (hap.context.onSchedule) {
         await hap.context.onSchedule(hap, t, cps);
       }
     } catch (err) {
-      errorLogger(err, 'getScheduler');
+      errorLogger(err, 'getSchedule');
     }
   };

@@ -939,10 +939,10 @@ export class Pattern {
           hap.context.onSchedule?.(scheduleHap, t, cps);
           onSchedule(scheduleHap, t, cps);
         },
-        // if dominantScheduler is set to true, the default output (webaudio) will be disabled
+        // if dominantSchedule is set to true, the default output (webaudio) will be disabled
         // when using multiple triggers, you cannot flip this flag to false again!
         // example: x.csound('CooLSynth').log() as well as x.log().csound('CooLSynth') should work the same
-        dominantScheduler: hap.context.dominantScheduler || dominant,
+        dominantSchedule: hap.context.dominantSchedule || dominant,
       }),
     );
   }

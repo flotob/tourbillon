@@ -13,7 +13,7 @@ import {
   getIsStarted,
   getPattern,
   getTime,
-  getSchedulerFunc,
+  getScheduleFunc,
   isPattern,
   logger,
   ref,
@@ -570,7 +570,7 @@ const kListeners = {};
 
 function _triggerKeyboard(input, cps, now, latencyCycles) {
   const pattern = getPattern();
-  const schedule = getSchedulerFunc();
+  const schedule = getScheduleFunc();
   if (!pattern || !schedule) {
     return false;
   }
@@ -623,7 +623,7 @@ export async function midikeys(input) {
     noteoff ||= noteon && velocity === 0; // handle devices which may use velocity = 0 to signal noteoff
     const key = `${input}_${note}`;
     const cps = getCps() ?? 0.5;
-    const triggerAvailable = !!(getPattern() && getSchedulerFunc());
+    const triggerAvailable = !!(getPattern() && getScheduleFunc());
     const latencySeconds = triggerAvailable ? 0.01 : 0.06; // avoid missing notes due to cyclist / trigger latency
     const now = getTime();
     const t = now + latencySeconds * cps;
