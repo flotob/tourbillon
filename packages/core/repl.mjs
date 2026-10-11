@@ -15,6 +15,7 @@ import { register, Pattern, isPattern, silence, stack } from './pattern.mjs';
 import { reset_state } from './impure.mjs';
 
 export function repl({
+  onSchedule,
   defaultOutput,
   onEvalError,
   beforeEval,
@@ -31,6 +32,11 @@ export function repl({
   id,
   mondo = false,
 }) {
+  if (defaultOutput) {
+    throw new Error(
+      'defaultOutput has been removed. use onSchedule(hap, time, cps) instead. see https://codeberg.org/uzu/strudel/pulls/2138/',
+    );
+  }
   const state = {
     schedulerError: undefined,
     evalError: undefined,
@@ -56,7 +62,7 @@ export function repl({
   };
 
   const schedulerOptions = {
-    onSchedule: getScheduler({ defaultOutput }),
+    onSchedule: getScheduler({ onSchedule }),
     getTime,
     onToggle: (started) => {
       updateState({ started });
@@ -565,11 +571,11 @@ export function repl({
 }
 
 export const getScheduler =
-  ({ defaultOutput }) =>
+  ({ onSchedule }) =>
   async (hap, t, cps) => {
     try {
       if (!hap.context.onSchedule || !hap.context.dominantScheduler) {
-        await defaultOutput(hap, t, cps);
+        await onSchedule(hap, t, cps);
       }
       if (hap.context.onSchedule) {
         await hap.context.onSchedule(hap, t, cps);

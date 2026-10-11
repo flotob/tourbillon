@@ -9,7 +9,7 @@ import {
   superdough,
   getAudioContext,
   setLogger,
-  rawdspScheduler,
+  rawdspOutput,
   registerWorklet,
   setAudioContext,
   initAudio,
@@ -167,14 +167,14 @@ export function webaudioRepl(options = {}) {
   setAudioContext(audioContext);
   options = {
     getTime: () => audioContext.currentTime,
-    defaultOutput: webaudioOutput,
+    onSchedule: webaudioOutput,
     ...options,
   };
   return repl(options);
 }
 
 Pattern.prototype.rawdsp = function () {
-  return this.onSchedule(rawdspScheduler, 1);
+  return this.onSchedule(rawdspOutput, 1);
 };
 
 function audioBufferToWav(buffer, opt) {

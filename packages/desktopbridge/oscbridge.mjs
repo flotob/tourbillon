@@ -5,7 +5,7 @@ import { getAudioContext } from '@strudel/webaudio/index.mjs';
 
 const collator = new ClockCollator({});
 
-export async function oscSchedulerTauri(hap, targetTime, cps = 1) {
+export async function tauriOscOutput(hap, targetTime, cps = 1) {
   const controls = parseControlsFromHap(hap, cps);
   const params = [];
   const currentTime = getAudioContext().currentTime;
@@ -34,5 +34,5 @@ export async function oscSchedulerTauri(hap, targetTime, cps = 1) {
   });
 }
 Pattern.prototype.osc = function () {
-  return this.onSchedule(oscSchedulerTauri);
+  return this.onSchedule(tauriOscOutput);
 };

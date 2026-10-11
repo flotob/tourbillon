@@ -643,7 +643,7 @@ export const debugAudiograph = async (argOptions = {}) => {
         return;
       }
 
-      await webaudioOutput(hap, t, hap.duration / cps, cps, t);
+      await webaudioOutput(hap, t, cps);
 
       if (hapsBatch && hap_count % hapsBatch === 0) drawDiagram();
     }),

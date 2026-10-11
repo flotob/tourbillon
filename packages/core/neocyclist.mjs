@@ -8,7 +8,12 @@ import { logger } from './logger.mjs';
 import { ClockCollator, cycleToSeconds } from './util.mjs';
 
 export class NeoCyclist {
-  constructor({ onSchedule, onToggle, getTime }) {
+  constructor({ onSchedule, onToggle, getTime, onTrigger }) {
+    if (onTrigger) {
+      throw new Error(
+        'onTrigger has been dropped. use onSchedule(hap, time, cps) instead, see https://codeberg.org/uzu/strudel/pulls/2138',
+      );
+    }
     this.started = false;
     this.cps = 0.5;
     this.getTime = getTime; // get absolute time

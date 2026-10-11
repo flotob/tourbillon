@@ -37,7 +37,7 @@ export function initDough() {
   return D.ready;
 }
 
-export async function doughScheduler(hap, targetTime, cps = 1) {
+export async function doughOutput(hap, targetTime, cps = 1) {
   const offset = D.context_offset?.[0];
   if (!offset) {
     return; // not ready
@@ -71,5 +71,5 @@ export async function doughScheduler(hap, targetTime, cps = 1) {
 export const dough = register('dough', (pat) => {
   initDough();
   ensureMinimalOutput();
-  return pat.onSchedule(doughScheduler);
+  return pat.onSchedule(doughOutput);
 });

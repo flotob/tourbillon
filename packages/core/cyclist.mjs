@@ -11,6 +11,7 @@ export class Cyclist {
   constructor({
     interval,
     onSchedule,
+    onTrigger,
     onToggle,
     onError,
     getTime,
@@ -19,6 +20,11 @@ export class Cyclist {
     clearInterval,
     beforeStart,
   }) {
+    if (onTrigger) {
+      throw new Error(
+        'onTrigger has been dropped. use onSchedule(hap, time, cps) instead, see https://codeberg.org/uzu/strudel/pulls/2138',
+      );
+    }
     this.started = false;
     this.beforeStart = beforeStart;
     this.cps = 0.5;

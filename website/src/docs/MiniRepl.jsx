@@ -48,7 +48,7 @@ export function MiniRepl({
 
     const editor = new StrudelMirror({
       id,
-      defaultOutput: webaudioOutput,
+      onSchedule: webaudioOutput,
       getTime: () => getAudioContext().currentTime,
       transpiler,
       autodraw,
