@@ -271,23 +271,3 @@ function writeString(view, offset, string) {
     view.setUint8(offset + i, string.charCodeAt(i));
   }
 }
-
-/**
- *
- * make something happen on event time
- * uses browser timeout which is innacurate for audio tasks
- * @name onTriggerTime
- * @tags external_io
- * @memberof Pattern
- *  @returns Pattern
- * @example
- * s("bd!8").onTriggerTime((hap) => {console.log(hap)})
- */
-Pattern.prototype.onTriggerTime = function (func) {
-  return this.onSchedule((hap, targetTime) => {
-    const diff = targetTime - strudel.getClockTime();
-    window.setTimeout(() => {
-      func(hap);
-    }, diff * 1000);
-  }, false);
-};
