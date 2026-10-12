@@ -2354,7 +2354,7 @@ export const ply = register('ply', function (factor, pat) {
  * @example
  * s("bd hh sd hh").fast(2) // s("[bd hh sd hh]*2")
  */
-export const { fast } = register(
+export const fast = register(
   'fast',
   function (factor, pat) {
     if (factor === 0) {
