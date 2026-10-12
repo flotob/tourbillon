@@ -371,13 +371,13 @@ importers:
 
   packages/hs2js:
     dependencies:
+      tree-sitter-haskell:
+        specifier: ^0.23.1
+        version: 0.23.1(tree-sitter@0.21.1)
       web-tree-sitter:
         specifier: ^0.24.7
         version: 0.24.7
     devDependencies:
-      tree-sitter-haskell:
-        specifier: ^0.23.1
-        version: 0.23.1(tree-sitter@0.21.1)
       vite:
         specifier: ^6.0.11
         version: 6.0.11(@types/node@22.10.10)(jiti@2.4.2)(lightningcss@1.29.1)(terser@5.37.0)(yaml@2.7.0)
