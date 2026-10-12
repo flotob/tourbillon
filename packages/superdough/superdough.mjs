@@ -1048,7 +1048,3 @@ export const superdough = async (value, t, hapDuration, cps = 0.5, cycle = 0.5) 
     }
   });
 };
-
-export const superdoughTrigger = (t, hap, ct, cps) => {
-  superdough(hap, t - ct, hap.duration / cps, cps);
-};

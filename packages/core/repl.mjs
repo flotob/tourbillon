@@ -7,13 +7,15 @@ import {
   setIsStarted,
   setPattern as exposeSchedulerPattern,
   setTime,
-  setTriggerFunc,
+  setScheduleFunc,
+  setClockTime,
 } from './schedulerState.mjs';
 import { evalScope } from './evaluate.mjs';
 import { register, Pattern, isPattern, silence, stack } from './pattern.mjs';
 import { reset_state } from './impure.mjs';
 
 export function repl({
+  onSchedule,
   defaultOutput,
   onEvalError,
   beforeEval,
@@ -30,6 +32,11 @@ export function repl({
   id,
   mondo = false,
 }) {
+  if (defaultOutput) {
+    throw new Error(
+      'defaultOutput has been removed. use onSchedule(hap, time, cps) instead. see https://codeberg.org/uzu/strudel/pulls/2138/',
+    );
+  }
   const state = {
     schedulerError: undefined,
     evalError: undefined,
@@ -55,7 +62,7 @@ export function repl({
   };
 
   const schedulerOptions = {
-    onTrigger: getTrigger({ defaultOutput, getTime }),
+    onSchedule: getSchedule({ onSchedule }),
     getTime,
     onToggle: (started) => {
       updateState({ started });
@@ -73,7 +80,7 @@ export function repl({
   // NeoCyclist uses a shared worker to communicate between instances, which is not supported on mobile chrome
   const scheduler =
     sync && typeof SharedWorker != 'undefined' ? new NeoCyclist(schedulerOptions) : new Cyclist(schedulerOptions);
-  setTriggerFunc(schedulerOptions.onTrigger);
+  setScheduleFunc(schedulerOptions.onSchedule);
   setCpsFunc(() => scheduler.cps);
   let pPatterns = {};
   let anonymousIndex = 0;
@@ -224,6 +231,7 @@ export function repl({
     return pattern;
   };
   setTime(() => scheduler.now()); // TODO: refactor?
+  setClockTime(() => scheduler.getTime()); // TODO: refactor?
 
   // Helper function to apply pattern transformations (solo, each, all)
   // this should be abstracted more
@@ -407,6 +415,7 @@ export function repl({
       updateState({ code, pending: true });
       await injectPatternMethods();
       setTime(() => scheduler.now()); // TODO: refactor?
+      setClockTime(() => scheduler.getTime()); // TODO: refactor?
       await beforeEval?.({ code, blockBased: false });
       allTransforms = []; // reset all transforms
 
@@ -452,6 +461,7 @@ export function repl({
       updateState({ code, pending: true });
       await injectPatternMethods();
       setTime(() => scheduler.now()); // TODO: refactor?
+      setClockTime(() => scheduler.getTime()); // TODO: refactor?
       await beforeEval?.({ code, blockBased: true });
       allTransforms = []; // reset all transforms
 
@@ -560,20 +570,17 @@ export function repl({
   return { scheduler, evaluate, evaluateBlock, start, stop, pause, setCps, setPattern, setCode, toggle, state };
 }
 
-export const getTrigger =
-  ({ getTime, defaultOutput }) =>
-  async (hap, deadline, duration, cps, t) => {
-    //   ^ this signature is different from hap.context.onTrigger, as set by Pattern.onTrigger(onTrigger)
-    // TODO: get rid of deadline after https://codeberg.org/uzu/strudel/pulls/1004
+export const getSchedule =
+  ({ onSchedule }) =>
+  async (hap, t, cps) => {
     try {
-      if (!hap.context.onTrigger || !hap.context.dominantTrigger) {
-        await defaultOutput(hap, deadline, duration, cps, t);
+      if (!hap.context.onSchedule || !hap.context.dominantSchedule) {
+        await onSchedule(hap, t, cps);
       }
-      if (hap.context.onTrigger) {
-        // call signature of output / onTrigger is different...
-        await hap.context.onTrigger(hap, getTime(), cps, t);
+      if (hap.context.onSchedule) {
+        await hap.context.onSchedule(hap, t, cps);
       }
     } catch (err) {
-      errorLogger(err, 'getTrigger');
+      errorLogger(err, 'getSchedule');
     }
   };

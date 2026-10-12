@@ -9,7 +9,7 @@ import {
   superdough,
   getAudioContext,
   setLogger,
-  rawdspTrigger,
+  rawdspOutput,
   registerWorklet,
   setAudioContext,
   initAudio,
@@ -32,8 +32,8 @@ const hap2value = (hap) => {
 };
 
 // uses more precise, absolute t if available, see https://github.com/tidalcycles/strudel/pull/1004
-// TODO: refactor output callbacks to eliminate deadline
-export const webaudioOutput = (hap, _deadline, hapDuration, cps, t) => {
+export const webaudioOutput = (hap, t, cps) => {
+  const hapDuration = hap.duration / cps;
   return superdough(hap2value(hap), t, hapDuration, cps, hap.whole?.begin.valueOf());
 };
 
@@ -167,14 +167,14 @@ export function webaudioRepl(options = {}) {
   setAudioContext(audioContext);
   options = {
     getTime: () => audioContext.currentTime,
-    defaultOutput: webaudioOutput,
+    onSchedule: webaudioOutput,
     ...options,
   };
   return repl(options);
 }
 
 Pattern.prototype.rawdsp = function () {
-  return this.onTrigger(rawdspTrigger, 1);
+  return this.onSchedule(rawdspOutput, 1);
 };
 
 function audioBufferToWav(buffer, opt) {

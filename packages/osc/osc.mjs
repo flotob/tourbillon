@@ -55,7 +55,7 @@ export function parseControlsFromHap(hap, cps) {
   return controls;
 }
 
-export async function oscTrigger(hap, currentTime, cps = 1, targetTime) {
+export async function oscOutput(hap, targetTime, cps = 1) {
   const ws = await connect();
 
   const timeMs = getClockBridge().getPerformanceTime(targetTime);
@@ -90,5 +90,5 @@ export async function oscTrigger(hap, currentTime, cps = 1, targetTime) {
  */
 export const osc = register('osc', (pat) => {
   ensureMinimalOutput();
-  return pat.onTrigger(oscTrigger);
+  return pat.onSchedule(oscOutput);
 });
