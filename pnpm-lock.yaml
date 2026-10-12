@@ -299,6 +299,9 @@ importers:
       '@strudel/core':
         specifier: workspace:*
         version: link:../core
+      '@strudel/osc':
+        specifier: workspace:*
+        version: link:../osc
       '@strudel/webaudio':
         specifier: workspace:*
         version: link:../webaudio
