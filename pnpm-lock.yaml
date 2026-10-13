@@ -318,8 +318,8 @@ importers:
         specifier: workspace:*
         version: link:../webaudio
       dough-synth:
-        specifier: 0.3.0
-        version: 0.3.0
+        specifier: 0.4.1
+        version: 0.4.1
     devDependencies:
       vite:
         specifier: ^6.0.11
@@ -4078,8 +4078,8 @@ packages:
     resolution: {integrity: sha512-47qPchRCykZC03FhkYAhrvwU4xDBFIj1QPqaarj6mdM/hgUzfPHcpkHJOn3mJAufFeeAxAzeGsr5X0M4k6fLZQ==}
     engines: {node: '>=12'}
 
-  dough-synth@0.3.0:
-    resolution: {integrity: sha512-23mwuF0QZOGngsiB+H1EW9ZOV2kciqHBJpi2kjZoWYOATi2v43trpai2UoY6vtWUR6raeAKYmazm4+Z5Sh8eUA==}
+  dough-synth@0.4.1:
+    resolution: {integrity: sha512-hxBsfOBwTIlJMhSB/Pk2xNNc7YTAVTgexn5Y7GRv/Kn2qBkMxwLxHJNvhsUhklQhVvzny/aCihxb0EOq4tv5Bw==}
     hasBin: true
 
   dset@3.1.4:
@@ -8030,6 +8030,18 @@ packages:
       utf-8-validate:
         optional: true
 
+  ws@8.22.0:
+    resolution: {integrity: sha512-Ydggc987+RO0AnWtZ/7Wq9FtNvcrL1b/RO0ud9mWjUPgDrsAAwQSF51sm2hm1XofbU/4jkpGEsLFsZZxU+1DOg==}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: '>=5.0.2'
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
+
   xmlcreate@2.0.4:
     resolution: {integrity: sha512-nquOebG4sngPmGPICTS5EnxqhKbCmz5Ox5hsszI2T6U5qdrJizBc+0ilYSEjTSzU0yZcmvppztXe/5Al5fUwdg==}
 
@@ -11800,7 +11812,12 @@ snapshots:
 
   dotenv@16.4.7: {}
 
-  dough-synth@0.3.0: {}
+  dough-synth@0.4.1:
+    dependencies:
+      ws: 8.22.0
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
 
   dset@3.1.4: {}
 
@@ -16697,6 +16714,8 @@ snapshots:
   ws@8.18.0: {}
 
   ws@8.18.3: {}
+
+  ws@8.22.0: {}
 
   xmlcreate@2.0.4: {}
 
