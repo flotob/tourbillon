@@ -68,7 +68,7 @@ const initialCode = `// LOADING`;
 export function useReplContext() {
   const { isSyncEnabled, audioEngineTarget, prebakeScript, includePrebakeScriptInShare } = useSettings();
   const shouldUseWebaudio = audioEngineTarget !== audioEngineTargets.osc;
-  const defaultOutput = shouldUseWebaudio ? webaudioOutput : superdirtOutput;
+  const onSchedule = shouldUseWebaudio ? webaudioOutput : superdirtOutput;
   const getTime = shouldUseWebaudio ? getAudioContextCurrentTime : getPerformanceTimeSeconds;
   const init = useCallback(() => {
     setActivePattern(getViewingPatternData().id);
@@ -76,7 +76,7 @@ export function useReplContext() {
     const drawContext = getDrawContext();
     const editor = new StrudelMirror({
       sync: isSyncEnabled,
-      defaultOutput,
+      onSchedule,
       getTime,
       setInterval,
       clearInterval,

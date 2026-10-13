@@ -7,8 +7,14 @@ This program is free software: you can redistribute it and/or modify it under th
 let time;
 let cpsFunc;
 let pattern;
-let triggerFunc;
+let scheduleFunc;
 let isStarted;
+
+/**
+ * @name getTime
+ * @tags internals
+ * @returns {Number} the current cycle time as a number
+ */
 export function getTime() {
   if (!time) {
     throw new Error('no time set! use setTime to define a time source');
@@ -20,10 +26,32 @@ export function setTime(func) {
   time = func;
 }
 
+let clockTime;
+/**
+ * @name getClockTime
+ * @tags internals
+ * @returns {Number} the current clock time in seconds (onSchedule time)
+ */
+export function getClockTime() {
+  if (!clockTime) {
+    throw new Error('no clockTime set! use setClockTime to define a time source');
+  }
+  return clockTime();
+}
+
+export function setClockTime(func) {
+  clockTime = func;
+}
+
 export function setCpsFunc(func) {
   cpsFunc = func;
 }
 
+/**
+ * @name getCps
+ * @tags internals
+ * @returns {Number} the current cycles per second
+ */
 export function getCps() {
   return cpsFunc?.();
 }
@@ -36,12 +64,12 @@ export function getPattern() {
   return pattern;
 }
 
-export function setTriggerFunc(func) {
-  triggerFunc = func;
+export function setScheduleFunc(func) {
+  scheduleFunc = func;
 }
 
-export function getTriggerFunc() {
-  return triggerFunc;
+export function getScheduleFunc() {
+  return scheduleFunc;
 }
 
 export function setIsStarted(val) {

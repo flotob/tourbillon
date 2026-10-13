@@ -41,7 +41,7 @@ export function initDough() {
   return D.ready;
 }
 
-export async function doughTrigger(hap, _currentTime, cps = 1, targetTime) {
+export async function doughOutput(hap, targetTime, cps = 1) {
   const offset = D.context_offset?.[0];
   if (!offset) {
     return; // not ready
@@ -75,5 +75,5 @@ export async function doughTrigger(hap, _currentTime, cps = 1, targetTime) {
 export const dough = register('dough', (pat) => {
   initDough();
   ensureMinimalOutput();
-  return pat.onTrigger(doughTrigger);
+  return pat.onSchedule(doughOutput);
 });

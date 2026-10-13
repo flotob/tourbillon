@@ -20,7 +20,7 @@ const soundMap = new Map();
 const loadedSounds = new Map();
 
 Pattern.prototype.supradough = function () {
-  return this.onTrigger((hap, __, cps, begin) => {
+  return this.onSchedule((hap, begin, cps) => {
     hap.value._begin = begin;
     hap.value._duration = hap.duration / cps;
     !doughWorklet && initDoughWorklet();

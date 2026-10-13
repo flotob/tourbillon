@@ -138,7 +138,7 @@ export const setIsZen = (active) => settingsMap.setKey('isZen', !!active);
 
 const patternSetting = (key) =>
   register(key, (value, pat) =>
-    pat.onTrigger(() => {
+    pat.onSchedule(() => {
       value = Array.isArray(value) ? value.join(' ') : value;
       if (value !== settingsMap.get()[key]) {
         settingsMap.setKey(key, value);
