@@ -104,7 +104,7 @@ export class Cyclist {
                   // They'll be scheduled during the next tick.
                   return;
                 }
-                onSchedule?.(hap, targetTime, this.cps);
+                onSchedule?.(hap, targetTime, hap.value.cps ?? this.cps);
                 if (hap.value.cps !== undefined && this.cps != hap.value.cps) {
                   cpsChanged = true;
                   this.cps = hap.value.cps;
