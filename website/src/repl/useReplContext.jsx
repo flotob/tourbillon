@@ -106,19 +106,17 @@ export function useReplContext() {
         //post to iframe parent (like Udels) if it exists...
         window.parent?.postMessage(code);
 
-        // Get the full buffer content from the editor instead of just the evaluated block
-        const fullBufferCode = editorRef.current?.code || code;
-        setLatestCode(fullBufferCode);
-        window.location.hash = '#' + code2hash(fullBufferCode);
-        setDocumentTitle(fullBufferCode);
+        setLatestCode(code);
+        window.location.hash = '#' + code2hash(code);
+        setDocumentTitle(code);
         const viewingPatternData = getViewingPatternData();
-        setVersionDefaultsFrom(fullBufferCode);
-        const data = { ...viewingPatternData, code: fullBufferCode };
+        setVersionDefaultsFrom(code);
+        const data = { ...viewingPatternData, code };
         let id = data.id;
         const isExamplePattern = viewingPatternData.collection !== userPattern.collection;
 
         if (isExamplePattern) {
-          const codeHasChanged = fullBufferCode !== viewingPatternData.code;
+          const codeHasChanged = code !== viewingPatternData.code;
           if (codeHasChanged) {
             // fork example
             const newPattern = userPattern.duplicate(data);
@@ -170,8 +168,9 @@ export function useReplContext() {
   useEffect(() => {
     let editorSettings = {};
     Object.keys(defaultSettings).forEach((key) => {
-      // Don't use hasOwnProperty - nanostore uses proxies so values may not be own properties
-      editorSettings[key] = _settings[key];
+      if (Object.prototype.hasOwnProperty.call(_settings, key)) {
+        editorSettings[key] = _settings[key];
+      }
     });
     editorRef.current?.updateSettings(editorSettings);
   }, [_settings]);

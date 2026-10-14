@@ -150,7 +150,6 @@ export function SettingsTab({ started }) {
     isMultiCursorEnabled,
     patternAutoStart,
     includePrebakeScriptInShare,
-    isBlockBasedEvalEnabled,
   } = useSettings();
   const shouldAlwaysSync = isUdels();
   const canChangeAudioDevice = AudioContext.prototype.setSinkId != null;
@@ -306,11 +305,6 @@ export function SettingsTab({ started }) {
           label="Enable Multi-Cursor (Cmd/Ctrl+Click)"
           onChange={(cbEvent) => settingsMap.setKey('isMultiCursorEnabled', cbEvent.target.checked)}
           value={isMultiCursorEnabled}
-        />
-        <Checkbox
-          label="Enable Block-based Evaluation (EXPERIMENTAL)"
-          onChange={(cbEvent) => settingsMap.setKey('isBlockBasedEvalEnabled', cbEvent.target.checked)}
-          value={isBlockBasedEvalEnabled}
         />
         <Checkbox
           label="Enable flashing on evaluation"
