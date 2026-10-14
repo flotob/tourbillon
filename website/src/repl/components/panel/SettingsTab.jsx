@@ -9,7 +9,7 @@ import { confirmDialog } from '../../util.mjs';
 import { DEFAULT_MAX_POLYPHONY, setMaxPolyphony, setMultiChannelOrbits } from '@strudel/webaudio';
 import { ActionButton } from '../button/action-button.jsx';
 import { exportScript, ImportPrebakeScriptButton } from './ImportPrebakeScriptButton.jsx';
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import cx from '@src/cx.mjs';
 
 const inputClass =
@@ -356,11 +356,6 @@ function MainSettingsContent({ started }) {
 function PrebakeSettingsContent() {
   const { fontFamily, includePrebakeScriptInShare, prebakeScript } = useSettings();
   const editorRef = useRef();
-  useEffect(() => {
-    return () => {
-      editorRef.current?.cleanup();
-    };
-  });
 
   return (
     <div className="flex flex-col h-full text-foreground w-full overflow-auto" style={{ fontFamily }}>
