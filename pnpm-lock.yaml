@@ -251,9 +251,6 @@ importers:
       '@tonaljs/tonal':
         specifier: ^4.10.0
         version: 4.10.0
-      codemirror-helix:
-        specifier: ^0.5.0
-        version: 0.5.0(@codemirror/commands@6.8.0)(@codemirror/language@6.10.8)(@codemirror/search@6.5.8)(@codemirror/state@6.5.1)(@codemirror/view@6.36.2)
       nanostores:
         specifier: ^0.11.3
         version: 0.11.3
@@ -3659,15 +3656,6 @@ packages:
   cmd-shim@6.0.3:
     resolution: {integrity: sha512-FMabTRlc5t5zjdenF6mS0MBeFZm0XqHqeOkcskKFb/LYCcRQ5fVgLOHVc4Lq9CqABd9zhjwPjMBCJvMCziSVtA==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
-
-  codemirror-helix@0.5.0:
-    resolution: {integrity: sha512-hI56hf9VGz53H1YvL6H1GC7HtP6te8vX+MsIHaE9J7Q3PQ6KFapKtIRg6lqSH898ikHWpMCPu42r6HJN0IfVLA==}
-    peerDependencies:
-      '@codemirror/commands': ^6.0.0
-      '@codemirror/language': ^6.0.0
-      '@codemirror/search': ^6.0.0
-      '@codemirror/state': ^6.0.0
-      '@codemirror/view': ^6.0.0
 
   collapse-white-space@2.1.0:
     resolution: {integrity: sha512-loKTxY1zCOuG4j9f6EPnuyyYkf58RnhhWTvRoZEokgB+WbdXehfjFviyOVYkqzEWz1Q5kRiZdBYS5SwxbQYwzw==}
@@ -11410,14 +11398,6 @@ snapshots:
   clsx@2.1.1: {}
 
   cmd-shim@6.0.3: {}
-
-  codemirror-helix@0.5.0(@codemirror/commands@6.8.0)(@codemirror/language@6.10.8)(@codemirror/search@6.5.8)(@codemirror/state@6.5.1)(@codemirror/view@6.36.2):
-    dependencies:
-      '@codemirror/commands': 6.8.0
-      '@codemirror/language': 6.10.8
-      '@codemirror/search': 6.5.8
-      '@codemirror/state': 6.5.1
-      '@codemirror/view': 6.36.2
 
   collapse-white-space@2.1.0: {}
 
