@@ -214,7 +214,7 @@ class CoarseProcessor extends AudioWorkletProcessor {
     coarse = Math.max(1, coarse);
     for (let n = 0; n < blockSize; n++) {
       for (let i = 0; i < input.length; i++) {
-        output[i][n] = n % coarse === 0 ? input[i][n] : output[i][n - 1];
+        output[i][n] = n % coarse < 1 ? input[i][n] : output[i][n - 1];
       }
     }
     return true;

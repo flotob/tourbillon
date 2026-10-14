@@ -16,7 +16,7 @@ const drawContext = canvas.getContext('2d');
 const drawTime = [-2, 2]; // time window of drawn haps
 
 const editor = new StrudelMirror({
-  defaultOutput: webaudioOutput,
+  onSchedule: webaudioOutput,
   getTime: () => getAudioContext().currentTime,
   transpiler,
   root: document.getElementById('editor'),
@@ -29,6 +29,7 @@ const editor = new StrudelMirror({
       import('@strudel/core'),
       import('@strudel/draw'),
       import('@strudel/mini'),
+      import('@strudel/edo'),
       import('@strudel/tonal'),
       import('@strudel/webaudio'),
     );

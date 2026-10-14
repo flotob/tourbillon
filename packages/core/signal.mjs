@@ -5,7 +5,8 @@ This program is free software: you can redistribute it and/or modify it under th
 */
 
 import { Hap } from './hap.mjs';
-import { Pattern, fastcat, pure, register, reify, silence, stack, sequenceP } from './pattern.mjs';
+import { Pattern, fastcat, pure, register, reify, silence, stack, sequenceP, isPattern } from './pattern.mjs';
+import { _mod } from './util.mjs';
 import Fraction from './fraction.mjs';
 
 import { id, keyAlias, getCurrentKeyboardState } from './util.mjs';
@@ -15,6 +16,24 @@ export function steady(value) {
   return new Pattern((state) => [new Hap(undefined, state.span, value)]);
 }
 
+/**
+ * Creates a signal given by the input function
+ *
+ * @name signal
+ * @param {*} func
+ * @returns {Pattern} signal
+ * @tags generators
+ * @example
+ * // sawtooth signal definition
+ * signal(t=>t%1).segment(16).range(30,40).note()
+ * @example
+ * signal(t=>Math.pow(t,2)%1).range(40, 60).add(5).segment(16)
+ * .off(0, x=>x.add(7))
+ * .note()
+ * .s("gm_electric_guitar_jazz,gm_epiano")
+ *   .gain(1.7)
+ * .pianoroll()
+ */
 export const signal = (func) => {
   const query = (state) => [new Hap(undefined, state.span, func(state.span.begin, state.controls))];
   return new Pattern(query);
@@ -33,7 +52,7 @@ export const signal = (func) => {
  * .scale('C major')
  *
  */
-export const saw = signal((t) => t % 1);
+export const saw = signal((t) => _mod(t, 1));
 
 /**
  *  A sawtooth signal between -1 and 1 (like `saw`, but bipolar).
@@ -56,7 +75,7 @@ export const saw2 = saw.toBipolar();
  * .scale('C major')
  *
  */
-export const isaw = signal((t) => 1 - (t % 1));
+export const isaw = signal((t) => 1 - _mod(t, 1));
 
 /**
  *  A sawtooth signal between 1 and -1 (like `saw2`, but flipped).
@@ -113,7 +132,7 @@ export const cosine2 = sine2._early(Fraction(1).div(4));
  * n(square.segment(4).range(0,7)).scale("C:minor")
  *
  */
-export const square = signal((t) => Math.floor((t * 2) % 2));
+export const square = signal((t) => Math.floor(_mod(t * 2, 2)));
 
 /**
  *  A square signal between -1 and 1 (like `square`, but bipolar).
@@ -122,6 +141,22 @@ export const square = signal((t) => Math.floor((t * 2) % 2));
  * @tags generators
  */
 export const square2 = square.toBipolar();
+
+/**
+ *  A square signal between 1 and 0 (like `square` but flipped).
+ *
+ * @return {Pattern}
+ * @tags generators
+ */
+export const isquare = signal((t) => 1 - Math.floor(_mod(t * 2, 2)));
+
+/**
+ *  A square signal between 1 and -1 (like `isquare`, but bipolar).
+ *
+ * @return {Pattern}
+ * @tags generators
+ */
+export const isquare2 = isquare.toBipolar();
 
 /**
  *  A triangle signal between 0 and 1.
@@ -172,6 +207,7 @@ export const time = signal(id);
 /**
  *  The mouse's x position value ranges from 0 to 1.
  * @name mousex
+ * @synonyms mouseX
  * @return {Pattern}
  * @tags external_io
  * @example
@@ -182,6 +218,7 @@ export const time = signal(id);
 /**
  *  The mouse's y position value ranges from 0 to 1.
  * @name mousey
+ * @synonyms mouseY
  * @return {Pattern}
  * @tags external_io
  * @example
@@ -316,7 +353,7 @@ export const run = (n) => saw.range(0, n).round().segment(n);
  * // "hh".s().struct("1 0 1")
  */
 export const binary = (n) => {
-  const nBits = reify(n).log2(0).floor().add(1);
+  const nBits = reify(n).log2().floor().add(1);
   return binaryN(n, nBits);
 };
 
@@ -348,7 +385,7 @@ export const binaryN = (n, nBits = 16) => {
  *   .partials(binaryL(irand(4096).add(1)))
  */
 export const binaryL = (n) => {
-  const nBits = reify(n).log2(0).floor().add(1);
+  const nBits = reify(n).log2().floor().add(1);
   return binaryNL(n, nBits);
 };
 
@@ -389,12 +426,14 @@ export const randL = (n) => {
 export const randrun = (n) => {
   return signal((t, controls) => {
     // Without adding 0.5, the first cycle is always 0,1,2,3,...
-    const rands = getRandsAtTime(t.floor().add(0.5), n, controls.randSeed);
+    let rands = getRandsAtTime(t.floor().add(0.5), n, controls.randSeed);
+    // Support n = 1
+    if (!Array.isArray(rands)) rands = [rands];
     const nums = rands
       .map((n, i) => [n, i])
       .sort((a, b) => (a[0] > b[0]) - (a[0] < b[0]))
       .map((x) => x[1]);
-    const i = t.cyclePos().mul(n).floor() % n;
+    const i = _mod(t.cyclePos().mul(n).floor(), n);
     return nums[i];
   })._segment(n);
 };
@@ -540,6 +579,9 @@ export const __chooseWith = (pat, xs) => {
  * @returns {Pattern}
  * @example
  * note("c2 g2!2 d2 f1").s(chooseWith(sine.fast(2), ["sawtooth", "triangle", "bd:6"]))
+ * @example
+ * // Compare with chooseInWith
+ * note(chooseWith("<0 0.5 1>*3", ["c3", "b3", "d3"]))
  */
 export const chooseWith = (pat, xs) => {
   return __chooseWith(pat, xs).outerJoin();
@@ -551,6 +593,13 @@ export const chooseWith = (pat, xs) => {
  * @tags temporal
  * @param {Pattern} pat
  * @param {*} xs
+ * @example
+ * // Because the structure comes from the chosen values (the notes, here)
+ * // The choosing pattern will only advance once per cycle (not 3 times per cycle)
+ * note(chooseInWith("<0 0.5 1>*3", ["c3", "b3", "d3"]))
+ * @example
+ * // Here, the chosen values have a structure such that the choosing pattern will advance 3 times per cycle
+ * note(chooseInWith("<0 0.5 1>*3", ["c3*3", "b3*3", "d3*3"]))
  * @returns {Pattern}
  */
 export const chooseInWith = (pat, xs) => {
@@ -567,9 +616,7 @@ export const chooseInWith = (pat, xs) => {
  */
 export const choose = (...xs) => chooseWith(rand, xs);
 
-// todo: doc
 export const chooseIn = (...xs) => chooseInWith(rand, xs);
-export const chooseOut = choose;
 
 /**
  * Chooses from the given list of values (or patterns of values), according
@@ -715,12 +762,30 @@ export const perlin = signal((t, controls) => _perlin(t, controls.randSeed));
  */
 export const berlin = signal((t, controls) => _berlin(t, controls.randSeed));
 
-export const degradeByWith = register(
-  'degradeByWith',
-  (withPat, x, pat) => pat.fmap((a) => (_) => a).appLeft(withPat.filterValues((v) => v > x)),
-  true,
-  true,
-);
+/**
+ * `degradeByWith` is like `degradeBy`, but with control over the random or other signal used to filter out the events.
+ *
+ * `degradeBy(x)` is essentially `degradeByWith(rand, x)`
+ *
+ * This allows you to do things other than with `rand`, see examples below
+ *
+ * @name degradeByWith
+ * @param {Pattern|number} test
+ * @param {Pattern|number} testAgainst
+ * @memberof Pattern
+ * @tags temporal
+ * @returns {Pattern}
+ * @example
+ * note("c a f e").degradeByWith(sine, .1)
+ * @example
+ * note("c a f e").degradeByWith(perlin, .5)
+ * @example
+ * note("c a f e").degradeByWith(sine, cosine)
+ */
+export const degradeByWith = register('degradeByWith', (withPat, x, pat) => {
+  if (!isPattern(withPat)) withPat = pure(withPat);
+  return pat.fmap((a) => (_) => a).appLeft(withPat.filterValues((v) => v > x));
+});
 
 /**
  * Randomly removes events from the pattern by a given amount.

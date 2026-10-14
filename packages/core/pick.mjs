@@ -71,29 +71,32 @@ export const pickmod = register('pickmod', function (lookup, pat) {
 /** * pickF lets you use a pattern of numbers to pick which function to apply to another pattern.
  * @tags combiners, functional
  * @param {Pattern} pat
- * @param {Pattern} lookup a pattern of indices
- * @param {function[]} funcs the array of functions from which to pull
+ * @param {Pattern} lookup a pattern of indices or names
+ * @param {function[] | object} lookup the array or lookup object of functions from which to pull
  * @returns {Pattern}
  * @example
  * s("bd [rim hh]").pickF("<0 1 2>", [rev,jux(rev),fast(2)])
  * @example
  * note("<c2 d2>(3,8)").s("square")
  * .pickF("<0 2> 1", [jux(rev), fast(2), x=>x.lpf(800)])
+ * @example
+ * note("<c2 d2>(3,8)").s("square")
+ * .pickF("<jr l> f", { jr:jux(rev), f:fast(2), l:x=>x.lpf(800) })
  */
-export const pickF = register('pickF', function (lookup, funcs, pat) {
-  return pat.apply(pick(lookup, funcs));
+export const pickF = register('pickF', function (pickPattern, lookup, pat) {
+  return pat.apply(pick(lookup, pickPattern));
 });
 
 /** * The same as `pickF`, but if you pick a number greater than the size of the functions list,
  * it wraps around, rather than sticking at the maximum value.
  * @tags combiners
  * @param {Pattern} pat
- * @param {Pattern} lookup a pattern of indices
- * @param {function[]} funcs the array of functions from which to pull
+ * @param {Pattern} lookup a pattern of indices or names
+ * @param {function[] | object} lookup the array or lookup object of functions from which to pull
  * @returns {Pattern}
  */
-export const pickmodF = register('pickmodF', function (lookup, funcs, pat) {
-  return pat.apply(pickmod(lookup, funcs));
+export const pickmodF = register('pickmodF', function (pickPattern, lookup, pat) {
+  return pat.apply(pickmod(lookup, pickPattern));
 });
 
 /** * Similar to `pick`, but it applies an outerJoin instead of an innerJoin.
@@ -101,6 +104,8 @@ export const pickmodF = register('pickmodF', function (lookup, funcs, pat) {
  * @param {Pattern} pat
  * @param {*} xs
  * @returns {Pattern}
+ * @example
+ * note("<0*4 1 2*2 3*3>".pickOut(["g a", "e f", "f g f g" , "g c d"]))
  */
 export const pickOut = register('pickOut', function (lookup, pat) {
   return _pick(lookup, pat, false).outerJoin();

@@ -1,18 +1,16 @@
-import { defaultSettings, settingsMap, useSettings } from '../../../settings.mjs';
+import { defaultSettings, settingsMap, useSettings, storePrebakeScript, setSettingsTab } from '../../../settings.mjs';
 import { themes } from '@strudel/codemirror';
+import { PrebakeCodeMirror } from '../../../repl/prebakeCodeMirror.mjs';
 import { confirmAndReloadPage, isUdels } from '../../util.mjs';
 import { ButtonGroup } from './Forms.jsx';
 import { AudioDeviceSelector } from './AudioDeviceSelector.jsx';
 import { AudioEngineTargetSelector } from './AudioEngineTargetSelector.jsx';
 import { confirmDialog } from '../../util.mjs';
 import { DEFAULT_MAX_POLYPHONY, setMaxPolyphony, setMultiChannelOrbits } from '@strudel/webaudio';
-import { SpecialActionButton } from '../button/action-button.jsx';
-import { ImportPrebakeScriptButton } from './ImportPrebakeScriptButton.jsx';
-
-function cx(...classes) {
-  // : Array<string | undefined>
-  return classes.filter(Boolean).join(' ');
-}
+import { ActionButton } from '../button/action-button.jsx';
+import { exportScript, ImportPrebakeScriptButton } from './ImportPrebakeScriptButton.jsx';
+import { useEffect, useRef } from 'react';
+import cx from '@src/cx.mjs';
 
 const inputClass =
   'bg-background text-xs h-8 max-h-8 border border-box rounded-0 text-foreground border-muted placeholder-muted focus:outline-none focus:ring-0 focus:border-foreground';
@@ -123,7 +121,7 @@ const fontFamilyOptions = {
   galactico: 'galactico',
 };
 
-export function SettingsTab({ started }) {
+function MainSettingsContent({ started }) {
   const {
     theme,
     keybindings,
@@ -149,12 +147,11 @@ export function SettingsTab({ started }) {
     isTabIndentationEnabled,
     isMultiCursorEnabled,
     patternAutoStart,
-    includePrebakeScriptInShare,
   } = useSettings();
   const shouldAlwaysSync = isUdels();
   const canChangeAudioDevice = AudioContext.prototype.setSinkId != null;
   return (
-    <div className="p-4 text-foreground space-y-4 w-full" style={{ fontFamily }}>
+    <div className="p-4 text-foreground space-y-4 w-full overflow-auto" style={{ fontFamily }}>
       {canChangeAudioDevice && (
         <FormItem label="Audio Output Device">
           <AudioDeviceSelector
@@ -232,20 +229,12 @@ export function SettingsTab({ started }) {
           />
         </FormItem>
       </div>
-      <FormItem label="Prebake">
-        <ImportPrebakeScriptButton />
-        <Checkbox
-          label="Include prebake script in share"
-          onChange={(cbEvent) => settingsMap.setKey('includePrebakeScriptInShare', cbEvent.target.checked)}
-          value={includePrebakeScriptInShare}
-        />
-      </FormItem>
 
       <FormItem label="Keybindings">
         <ButtonGroup
           value={keybindings}
           onChange={(keybindings) => settingsMap.setKey('keybindings', keybindings)}
-          items={{ codemirror: 'Codemirror', vim: 'Vim', emacs: 'Emacs', vscode: 'VSCode' }}
+          items={{ codemirror: 'Codemirror', vim: 'Vim', emacs: 'Emacs', helix: 'Helix', vscode: 'VSCode' }}
         ></ButtonGroup>
       </FormItem>
       <FormItem label="Panel Position">
@@ -340,7 +329,7 @@ export function SettingsTab({ started }) {
       </FormItem>
       <FormItem label="Zen Mode">Try clicking the logo in the top left!</FormItem>
       <FormItem label="Reset Settings">
-        <SpecialActionButton
+        <ActionButton
           onClick={() => {
             confirmDialog('Sure?').then((r) => {
               if (r) {
@@ -349,10 +338,70 @@ export function SettingsTab({ started }) {
               }
             });
           }}
+          className="bg-background p-2 max-w-[300px] hover:opacity-50"
         >
           restore default settings
-        </SpecialActionButton>
+        </ActionButton>
       </FormItem>
+    </div>
+  );
+}
+
+function PrebakeSettingsContent() {
+  const { fontFamily, includePrebakeScriptInShare, prebakeScript } = useSettings();
+  const editorRef = useRef();
+  useEffect(() => {
+    return () => {
+      editorRef.current?.cleanup();
+    };
+  });
+
+  return (
+    <div className="flex flex-col h-full text-foreground w-full overflow-auto" style={{ fontFamily }}>
+      <div className="flex flex-col grow overflow-hidden h-full bg-background">
+        <section
+          className="pb-0 overflow-auto grow z-10 code-container"
+          ref={(el) => {
+            if (editorRef.current) {
+              return;
+            }
+            editorRef.current = new PrebakeCodeMirror(prebakeScript, (code) => storePrebakeScript(code), el);
+          }}
+        ></section>
+      </div>
+      <div className="flex justify-between items-center border-t border-muted px-4 whitespace-nowrap">
+        <Checkbox
+          label="share with patterns"
+          className="whitespace-nowrap max-w-[200px]"
+          onChange={(cbEvent) => settingsMap.setKey('includePrebakeScriptInShare', cbEvent.target.checked)}
+          value={includePrebakeScriptInShare}
+        />
+        <div className="py-2 flex flex-row items-center space-x-3 ">
+          <ImportPrebakeScriptButton updateEditor={(code) => editorRef?.current.setCode(code)} />
+          <ActionButton onClick={() => exportScript(prebakeScript)}>export</ActionButton>
+          <ActionButton onClick={() => editorRef.current?.savePrebake()}>save</ActionButton>
+        </div>
+      </div>
+    </div>
+  );
+}
+export function SettingsTab({ started }) {
+  const { settingsTab } = useSettings();
+  return (
+    <div className="w-full h-full text-foreground flex flex-col overflow-hidden">
+      <div className="px-2 shrink-0 h-8 space-x-4 flex max-w-full overflow-x-auto border-b border-muted">
+        <ButtonGroup
+          wrap
+          value={settingsTab}
+          onChange={(value) => setSettingsTab(value)}
+          items={{
+            settings: 'settings',
+            prebake: 'prebake',
+          }}
+        ></ButtonGroup>
+      </div>
+      {settingsTab === 'settings' && <MainSettingsContent started={started} />}
+      {settingsTab === 'prebake' && <PrebakeSettingsContent />}
     </div>
   );
 }

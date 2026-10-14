@@ -207,9 +207,10 @@ export async function exportPatterns() {
   const userPatterns = userPattern.getAll();
   const blob = new Blob([JSON.stringify(userPatterns)], { type: 'application/json' });
   const downloadLink = document.createElement('a');
+  const prefix = window.location.hostname.split('.').join('_');
   downloadLink.href = window.URL.createObjectURL(blob);
   const date = new Date().toISOString().split('T')[0];
-  downloadLink.download = `strudel_patterns_${date}.json`;
+  downloadLink.download = `${prefix}_patterns_${date}.json`;
   document.body.appendChild(downloadLink);
   downloadLink.click();
   document.body.removeChild(downloadLink);

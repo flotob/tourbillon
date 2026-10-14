@@ -25,7 +25,7 @@ import {
 import { map } from 'nanostores';
 import { logger } from './logger.mjs';
 import { connectLFO, connectEnvelope, connectBusModulator } from './modulators.mjs';
-import { loadBuffer } from './sampler.mjs';
+import { getSampleBufferSource, loadBuffer } from './sampler.mjs';
 import { getAudioContext } from './audioContext.mjs';
 import { SuperdoughAudioController } from './superdoughoutput.mjs';
 import { resetSeenKeys } from './wavetable.mjs';
@@ -1047,8 +1047,4 @@ export const superdough = async (value, t, hapDuration, cps = 0.5, cycle = 0.5) 
       }
     }
   });
-};
-
-export const superdoughTrigger = (t, hap, ct, cps) => {
-  superdough(hap, t - ct, hap.duration / cps, cps);
 };

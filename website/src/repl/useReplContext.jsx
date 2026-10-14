@@ -6,7 +6,7 @@ This program is free software: you can redistribute it and/or modify it under th
 
 import { code2hash, getPerformanceTimeSeconds, logger, silence } from '@strudel/core';
 import { getDrawContext } from '@strudel/draw';
-import { evaluate, transpiler } from '@strudel/transpiler';
+import { transpiler, evaluate } from '@strudel/transpiler';
 import {
   getAudioContextCurrentTime,
   renderPatternAudio,
@@ -68,14 +68,15 @@ const initialCode = `// LOADING`;
 export function useReplContext() {
   const { isSyncEnabled, audioEngineTarget, prebakeScript, includePrebakeScriptInShare } = useSettings();
   const shouldUseWebaudio = audioEngineTarget !== audioEngineTargets.osc;
-  const defaultOutput = shouldUseWebaudio ? webaudioOutput : superdirtOutput;
+  const onSchedule = shouldUseWebaudio ? webaudioOutput : superdirtOutput;
   const getTime = shouldUseWebaudio ? getAudioContextCurrentTime : getPerformanceTimeSeconds;
   const init = useCallback(() => {
+    setActivePattern(getViewingPatternData().id);
     const drawTime = [-2, 2];
     const drawContext = getDrawContext();
     const editor = new StrudelMirror({
       sync: isSyncEnabled,
-      defaultOutput,
+      onSchedule,
       getTime,
       setInterval,
       clearInterval,
@@ -86,12 +87,12 @@ export function useReplContext() {
       pattern: silence,
       drawTime,
       drawContext,
-      prebake: async () =>
-        Promise.all([modulesLoading, presets]).then(() => {
-          if (prebakeScript?.length) {
-            return evaluate(prebakeScript ?? '');
-          }
-        }),
+      prebake: async () => {
+        await Promise.all([modulesLoading, presets]);
+        if (prebakeScript) {
+          return evaluate(prebakeScript, { addReturn: false });
+        }
+      },
       onUpdateState: (state) => {
         setReplState({ ...state });
       },
@@ -108,6 +109,11 @@ export function useReplContext() {
 
         setLatestCode(code);
         window.location.hash = '#' + code2hash(code);
+        try {
+          window.location.hash = '#' + code2hash(code);
+        } catch (e) {
+          console.warn('[useReplContext] Failed to update hash:', e.message);
+        }
         setDocumentTitle(code);
         const viewingPatternData = getViewingPatternData();
         setVersionDefaultsFrom(code);

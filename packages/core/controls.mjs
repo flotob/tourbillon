@@ -118,7 +118,7 @@ export const { s, sound } = registerControl(['s', 'n', 'gain'], 'sound');
  * @param {number | Pattern} position Position in the wavetable from 0 to 1
  * @synonyms wavetablePosition
  * @example
- * s("squelch").bank("wt_digital").seg(8).note("F1").wt("0 0.25 0.5 0.75 1")
+ * s("wt_digital").seg(8).note("F1").wt("0 0.25 0.5 0.75 1")
  */
 export const { wt, wavetablePosition } = registerControl('wt', 'wavetablePosition');
 
@@ -394,6 +394,18 @@ export const { source, src } = registerControl('source', 'src');
  */
 // also see https://codeberg.org/uzu/strudel/pulls/63
 export const { n } = registerControl('n');
+
+/**
+ * Selects the given degree. Currently used in `xen` and `tune`:
+ *
+ * @name i
+ * @tags tonal
+ * @param {number | Pattern} value
+ * @example
+ * i("0 1 2 3 4 5 6 7").xen("<5edo 10edo 15edo hexany15>")
+ */
+export const { i } = registerControl('i');
+
 /**
  * Plays the given note name or midi number. A note name consists of
  *
@@ -507,10 +519,10 @@ export const { fmh, fmh1, fmh2, fmh3, fmh4, fmh5, fmh6, fmh7, fmh8 } = registerM
  * each other with matrix commands like `fm13`, which would send `fm1` back into
  * `fm3`
  *
- * @name fmi
+ * @name fm
  * @tags fm, superdough, supradough
  * @param {number | Pattern} brightness modulation index
- * @synonyms fm
+ * @synonyms fmi
  * @example
  * note("c e g b g e")
  * .fm("<0 1 2 8 32>")
@@ -1882,19 +1894,6 @@ export const { delay } = registerControl(['delay', 'delaytime', 'delayfeedback']
 export const { delayfeedback, delayfb, dfb } = registerControl('delayfeedback', 'delayfb', 'dfb');
 
 /**
- * Sets the level of the signal that is fed back into the delay.
- * Caution: Values >= 1 will result in a signal that gets louder and louder! Don't do it
- *
- * @name delayfeedback
- * @tags orbit, superdough, supradough
- * @param {number | Pattern} feedback between 0 and 1
- * @synonyms delayfb, dfb
- * @example
- * s("bd").delay(.25).delayfeedback("<.25 .5 .75 1>")
- *
- */
-export const { delayspeed } = registerControl('delayspeed');
-/**
  * Sets the time of the delay effect.
  *
  * @name delayspeed
@@ -1904,6 +1903,22 @@ export const { delayspeed } = registerControl('delayspeed');
  * @example
  * note("d d a# a".fast(2)).s("sawtooth").delay(.8).delaytime(1/2).delayspeed("<2 .5 -1 -2>")
  *
+ */
+export const { delayspeed } = registerControl('delayspeed');
+
+/**
+ * Sets the time of the delay effect in seconds.
+ *
+ * @name delaytime
+ * @tags orbit, superdough, supradough
+ * @param {number | Pattern} delay in seconds
+ * @synonyms delayt, dt
+ * @example
+ * note("d d a# a".fast(2))
+ * .s("sawtooth")
+ * .delay(.8)
+ * .delaytime(1/2)
+ * .delayspeed("<2 .5 -1 -2>")
  */
 export const { delaytime, delayt, dt } = registerControl('delaytime', 'delayt', 'dt');
 
@@ -1973,11 +1988,10 @@ export const { spread } = registerControl('spread');
  * Set dryness of reverb. See `room` and `size` for more information about reverb.
  *
  * @name dry
- * @tags superdirt
+ * @tags superdirt, superdough
  * @param {number | Pattern} dry 0 = wet, 1 = dry
  * @example
  * n("[0,3,7](3,8)").s("superpiano").room(.7).dry("<0 .5 .75 1>").osc()
- * @superdirtOnly
  *
  */
 export const { dry } = registerControl('dry');
@@ -2211,7 +2225,7 @@ export const { orbit } = registerControl('orbit', 'o');
  *   otherPat.bmod(..) (to modulate another pattern with the bus)
  *
  * @name bus
- * @tags superdirt
+ * @tags superdough
  * @param {number | Pattern} number
  */
 export const { bus } = registerControl('bus');
@@ -2220,7 +2234,7 @@ export const { bus } = registerControl('bus');
  * Postgain multiplier prior to sending the signal to the audio bus.
  *
  * @name busgain
- * @tags superdirt
+ * @tags superdough
  * @synonyms bgain
  * @param {number | Pattern} number
  */
@@ -2337,11 +2351,18 @@ export const { offset } = registerControl('offset');
  **/
 export const { octaves } = registerControl('octaves');
 /**
- * Remove anchor note from the voicing. Useful for melody harmonization
+ *  How the voicing is aligned to the anchor
+ *   - `below`: top note <= anchor
+ *   - `duck`: top note <= anchor, anchor excluded
+ *   - `above`: bottom note >= anchor
+ *   - `root`: bottom note is the lowest root of the chord >= anchor
+ *
+ *   - `oldabove` : old (buggy) behavior of above, kept for legacy reason
+ *   - `oldroot` : old (buggy) behavior of root, kept for legacy reason
  *
  * @name mode
  * @tags tonal
- * @param {string | Pattern} modeName one of {below | above | duck | root}
+ * @param {string | Pattern} modeName one of {below | above | duck | root | oldabove | oldroot}
  * @example
  * mode("<below above duck root>").chord("C").voicing()
  *
@@ -2355,7 +2376,7 @@ export const { mode } = registerControl(['mode', 'anchor']);
  *
  * @name room
  * @tags orbit, superdough
- * @param {number | Pattern} level between 0 and 1
+ * @param {number | Pattern} level
  * @example
  * s("bd sd [~ bd] sd").room("<0 .2 .4 .6 .8 1>")
  * @example
@@ -2567,13 +2588,17 @@ export const { compressorRelease } = registerControl('compressorRelease');
 export const { speed } = registerControl('speed');
 
 /**
- * Changes the speed of sample playback, i.e. a cheap way of changing pitch.
+ * Changes the pitch of the sample without changing its speed.
+ * The frequencies are multiplied by (factor + 1) for positive numbers
+ * and by max(factor / 4 + 1, 0) for negative numbers.
+ * So tuning up by octaves can be done with 1, 3, 7, ...
+ * and tuning down by octaves with -2, -3, -3.5...
  *
  * @name stretch
  * @tags pitch, samples
- * @param {number | Pattern} factor -inf to inf, negative numbers play the sample backwards.
+ * @param {number | Pattern} factor between `-4` and `inf`. Positive increases pitch, 0 does nothing, negative decreases the pitch.
  * @example
- * s("gm_flute").stretch("1 2 .5")
+ * s("gm_flute").stretch("<2 1 0 -2>")
  *
  */
 export const { stretch } = registerControl('stretch');

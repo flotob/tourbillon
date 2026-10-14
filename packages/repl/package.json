@@ -36,6 +36,7 @@
     "@strudel/codemirror": "workspace:*",
     "@strudel/core": "workspace:*",
     "@strudel/draw": "workspace:*",
+    "@strudel/edo": "workspace:*",
     "@strudel/hydra": "workspace:*",
     "@strudel/midi": "workspace:*",
     "@strudel/mini": "workspace:*",

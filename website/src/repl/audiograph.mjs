@@ -628,7 +628,7 @@ export const debugAudiograph = async (argOptions = {}) => {
 
   /*global all*/
   all((pat) =>
-    pat.onTrigger(async (hap, duration, cps, t) => {
+    pat.onSchedule(async (hap, t, cps) => {
       hap_count++;
       const key = Object.entries(hap.value)
         .map((param) => param.join('/'))
@@ -643,7 +643,7 @@ export const debugAudiograph = async (argOptions = {}) => {
         return;
       }
 
-      await webaudioOutput(hap, t, hap.duration / cps, cps, t);
+      await webaudioOutput(hap, t, cps);
 
       if (hapsBatch && hap_count % hapsBatch === 0) drawDiagram();
     }),

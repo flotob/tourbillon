@@ -70,17 +70,6 @@ export const getEventOffsetMs = (targetTimeSeconds, currentTimeSeconds) => {
   return (targetTimeSeconds - currentTimeSeconds) * 1000;
 };
 
-/**
- * @deprecated does not appear to be referenced or invoked anywhere in the codebase
- * @noAutocomplete
- */
-export const getFreq = (noteOrMidi) => {
-  if (typeof noteOrMidi === 'number') {
-    return midiToFreq(noteOrMidi);
-  }
-  return midiToFreq(noteToMidi(noteOrMidi));
-};
-
 const pcs = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
 /**
  * @deprecated only used in workshop (first-notes)
@@ -130,24 +119,49 @@ export const getPlayableNoteValue = (hap) => {
   return note;
 };
 
+/**
+ * Given a hap, returns the frequency of the note or freq, if defined
+ *
+ * Given a note, returns the frequency of that note
+ * `getFreq('c3')`
+ *
+ * Given a midi note number, returns the frequency of that midi note
+ * `getFreq('c3')`
+ *
+ * @name getFrequency
+ * @tags pitch
+ * @synonyms getFreq
+ * @param {Hap | note | number} input
+ * @returns {Number}
+ * @example
+ * i("4 8 9 10 - - 5 7 9 11 - -").tune("tranh3")
+ * .mul(getFreq('c3'))
+ * .freq().clip(.5).room(1)
+ */
 export const getFrequency = (hap) => {
-  let { value, context } = hap;
+  let { value, context } =
+    typeof hap == 'object'
+      ? hap
+      : // default: interpret value as midi note.
+        { value: hap, context: { type: 'note' } };
   // if value is number => interpret as midi number as long as its not marked as frequency
   if (typeof value === 'object') {
     if (value.freq) {
       return value.freq;
     }
-    return getFreq(value.note || value.n || value.value);
+    return getFreq(value.note ?? value.n ?? value.value);
   }
   if (typeof value === 'number' && context.type !== 'frequency') {
-    value = midiToFreq(hap.value);
+    value = midiToFreq(value);
   } else if (typeof value === 'string' && isNote(value)) {
-    value = midiToFreq(noteToMidi(hap.value));
+    value = midiToFreq(noteToMidi(value));
   } else if (typeof value !== 'number') {
     throw new Error('not a note or frequency: ' + value);
   }
   return value;
 };
+
+export const getFreq = (hap) => getFrequency(hap);
 
 // rotate array by n steps (to the left)
 export const rotate = (arr, n) => arr.slice(n).concat(arr.slice(0, n));
@@ -339,8 +353,13 @@ export function uniqsortr(a) {
 
 export function unicodeToBase64(text) {
   const utf8Bytes = new TextEncoder().encode(text);
-  const base64String = btoa(String.fromCharCode(...utf8Bytes));
-  return base64String;
+  let binaryString = '';
+  const chunkSize = 0x8000;
+  for (let i = 0; i < utf8Bytes.length; i += chunkSize) {
+    const chunk = utf8Bytes.subarray(i, i + chunkSize);
+    binaryString += String.fromCharCode.apply(null, chunk);
+  }
+  return btoa(binaryString);
 }
 
 export function base64ToUnicode(base64String) {

@@ -34,6 +34,7 @@
   "homepage": "https://codeberg.org/uzu/strudel#readme",
   "dependencies": {
     "@strudel/core": "workspace:*",
+    "@strudel/edo": "workspace:*",
     "@strudel/mini": "workspace:*",
     "@strudel/tonal": "workspace:*",
     "@strudel/transpiler": "workspace:*",

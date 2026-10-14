@@ -1,5 +1,5 @@
 import { getBaseURL, getCommonSampleInfo } from './util.mjs';
-import { registerSound, registerWaveTable } from './index.mjs';
+import { registerSound, registerWaveTable, soundMap } from './index.mjs';
 import { getAudioContext } from './audioContext.mjs';
 import {
   getADSRValues,
@@ -29,6 +29,30 @@ function humanFileSize(bytes, si) {
   } while (bytes >= thresh);
   return bytes.toFixed(1) + ' ' + units[u];
 }
+
+/**
+ * Returns the duration, in seconds, of the given sample.
+ * Has optional param `n` (for instance, the `2` in `s("casio:2")`)
+ *
+ * Note: `must` be called with await, otherwise you'll get a pending Promise object.
+ *
+ * @name getDuration
+ * @synonym getDur
+ * @tags samples
+ * @param {string} sampleName
+ * @param {number} (optional) n
+ *
+ * @example
+ * // Set a patterns cycle length to exactly the length of the sample
+ * samples('github:tidalcycles/dirt-samples')
+ * let k = await getDuration('sax')
+ * s("sax").cps(1/k)
+ */
+export const getDuration = (s, n = 0) => {
+  return getSampleBufferSource({ s, n }, soundMap.get(s)[s].data.samples).then((x) => x.bufferDuration);
+};
+
+export const getDur = getDuration;
 
 export function getSampleInfo(hapValue, bank) {
   const { speed = 1.0 } = hapValue;

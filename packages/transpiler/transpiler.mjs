@@ -1,12 +1,11 @@
-import { getLeafLocations } from '@strudel/mini';
+/*
+transpiler.mjs - <short description TODO>
+Copyright (C) 2022 Strudel contributors - see <https://codeberg.org/uzu/strudel/src/branch/main/packages/superdough/superdough.mjs>
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details. You should have received a copy of the GNU Affero General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
 import { parse } from 'acorn';
 import escodegen from 'escodegen';
 import { walk } from 'estree-walker';
-
-let widgetMethods = [];
-export function registerWidgetType(type) {
-  widgetMethods.push(type);
-}
 
 let languages = new Map();
 // config = { getLocations: (code: string, offset?: number) => number[][] }
@@ -17,9 +16,29 @@ let languages = new Map();
 export function registerLanguage(type, config) {
   languages.set(type, config);
 }
+export function getLanguages() {
+  return languages;
+}
+
+const plugins = [];
+
+export function registerTranspilerPlugin(plugin) {
+  plugins.push(plugin);
+}
+export function getPlugins() {
+  return plugins.flat(Infinity);
+}
 
 export function transpiler(input, options = {}) {
-  const { wrapAsync = false, addReturn = true, emitMiniLocations = true, emitWidgets = true } = options;
+  options = {
+    wrapAsync: false,
+    addReturn: true,
+    emitMiniLocations: true,
+    emitWidgets: true,
+    ...options,
+  };
+
+  const { wrapAsync, addReturn, emitMiniLocations, emitWidgets } = options;
 
   const comments = [];
   let ast = parse(input, {
@@ -29,169 +48,49 @@ export function transpiler(input, options = {}) {
     onComment: comments,
   });
 
-  const miniDisableRanges = findMiniDisableRanges(comments, input.length);
-  let miniLocations = [];
-  const collectMiniLocations = (value, node) => {
-    const minilang = languages.get('minilang');
-    if (minilang) {
-      const code = `[${value}]`;
-      const locs = minilang.getLocations(code, node.start);
-      miniLocations = miniLocations.concat(locs);
-    } else {
-      const leafLocs = getLeafLocations(`"${value}"`, node.start, input);
-      miniLocations = miniLocations.concat(leafLocs);
-    }
-  };
-  let widgets = [];
+  let miniDisableRanges = findMiniDisableRanges(comments, input.length);
+
+  let labels = [];
+
+  const context = { options, input, miniDisableRanges, labels };
+  const plugins = getPlugins().map((plugin) => plugin.walk?.(context));
 
   walk(ast, {
-    enter(node, parent /* , prop, index */) {
-      if (isLanguageLiteral(node)) {
-        const { name } = node.tag;
-        const language = languages.get(name);
-        const code = node.quasi.quasis[0].value.raw;
-        const offset = node.quasi.start + 1;
-        if (emitMiniLocations) {
-          const locs = language.getLocations(code, offset);
-          miniLocations = miniLocations.concat(locs);
-        }
-        this.skip();
-        return this.replace(languageWithLocation(name, code, offset));
+    enter(node, parent, prop, index) {
+      for (const plugin of plugins) {
+        if (!plugin?.enter?.call(this, node, parent, prop, index)) continue;
+        return;
       }
-      if (isTemplateLiteral(node, 'tidal')) {
-        const raw = node.quasi.quasis[0].value.raw;
-        const offset = node.quasi.start + 1;
-        if (emitMiniLocations) {
-          const stringLocs = collectHaskellMiniLocations(raw, offset);
-          miniLocations = miniLocations.concat(stringLocs);
-        }
-        this.skip();
-        return this.replace(tidalWithLocation(raw, offset));
-      }
-      if (isBackTickString(node, parent)) {
-        if (isMiniDisabled(node.start, miniDisableRanges)) {
-          return;
-        }
-        const { quasis } = node;
-        const { raw } = quasis[0].value;
-        this.skip();
-        emitMiniLocations && collectMiniLocations(raw, node);
-        return this.replace(miniWithLocation(raw, node));
-      }
-      if (isStringWithDoubleQuotes(node)) {
-        if (isMiniDisabled(node.start, miniDisableRanges)) {
-          return;
-        }
-        const { value } = node;
-        this.skip();
-        emitMiniLocations && collectMiniLocations(value, node);
-        return this.replace(miniWithLocation(value, node));
-      }
-      if (isSliderFunction(node)) {
-        emitWidgets &&
-          widgets.push({
-            from: node.arguments[0].start,
-            to: node.arguments[0].end,
-            value: node.arguments[0].raw, // don't use value!
-            min: node.arguments[1]?.value ?? 0,
-            max: node.arguments[2]?.value ?? 1,
-            step: node.arguments[3]?.value,
-            type: 'slider',
-          });
-        return this.replace(sliderWithLocation(node));
-      }
-      if (isWidgetMethod(node)) {
-        const type = node.callee.property.name;
-        const index = widgets.filter((w) => w.type === type).length;
-        const widgetConfig = {
-          to: node.end,
-          index,
-          type,
-          id: options.id,
-        };
-        emitWidgets && widgets.push(widgetConfig);
-        return this.replace(widgetWithLocation(node, widgetConfig));
-      }
-      if (isBareSamplesCall(node, parent)) {
-        return this.replace(withAwait(node));
-      }
+
       if (isLabelStatement(node)) {
         return this.replace(labelToP(node));
       }
     },
 
     leave(node, parent, prop, index) {
-      if (!isKabelCall(node)) return;
-
-      let [expr, ...rest] = node.arguments;
-      if (!expr) throw new Error('K(...) requires an expression');
-
-      if (shouldCallKabelExpression(expr)) {
-        expr = {
-          type: 'CallExpression',
-          callee: expr,
-          arguments: [],
-          optional: false,
-        };
+      for (const plugin of plugins) {
+        if (!plugin?.leave?.call(this, node, parent, prop, index)) continue;
+        return;
       }
-
-      const { template, patternExprs } = extractPatternPlaceholders(expr);
-      if (patternExprs.length) {
-        const workletArgs = [{ type: 'Literal', value: template }, ...patternExprs, ...rest];
-
-        let callee = node.callee;
-        if (callee.type === 'ChainExpression') callee = callee.expression;
-        if (callee.type === 'MemberExpression') {
-          return this.replace({
-            type: 'CallExpression',
-            callee: workletMemberAst(callee.object),
-            arguments: workletArgs,
-            optional: false,
-          });
-        }
-        return this.replace({
-          type: 'CallExpression',
-          callee: { type: 'Identifier', name: 'worklet' },
-          arguments: workletArgs,
-          optional: false,
-        });
-      }
-
-      const kabelSrc = genExprSource(expr);
-      const workletArgs = [{ type: 'Literal', value: kabelSrc }, ...rest];
-
-      let callee = node.callee;
-      if (callee.type === 'ChainExpression') callee = callee.expression;
-      if (callee.type === 'MemberExpression') {
-        return this.replace({
-          type: 'CallExpression',
-          callee: workletMemberAst(callee.object),
-          arguments: workletArgs,
-          optional: false,
-        });
-      }
-      return this.replace({
-        type: 'CallExpression',
-        callee: { type: 'Identifier', name: 'worklet' },
-        arguments: workletArgs,
-        optional: false,
-      });
     },
   });
 
   let { body } = ast;
 
+  const silenceExpression = {
+    type: 'ExpressionStatement',
+    expression: {
+      type: 'Identifier',
+      name: 'silence',
+    },
+  };
+
   if (!body.length) {
     console.warn('empty body -> fallback to silence');
-    body.push({
-      type: 'ExpressionStatement',
-      expression: {
-        type: 'Identifier',
-        name: 'silence',
-      },
-    });
+    body.push(silenceExpression);
   } else if (!body?.[body.length - 1]?.expression) {
-    throw new Error('unexpected ast format without body expression');
+    // Last statement is not an expression (e.g., VariableDeclaration, FunctionDeclaration)
+    body.push(silenceExpression);
   }
 
   // add return to last statement
@@ -209,256 +108,15 @@ export function transpiler(input, options = {}) {
   if (!emitMiniLocations) {
     return { output };
   }
-  return { output, miniLocations, widgets };
+
+  let pluginContext;
+  ({ options, input, miniDisableRanges, ...pluginContext } = context);
+
+  return { output, ...pluginContext };
 }
 
-function isKabelCall(node) {
-  if (node.type !== 'CallExpression') return false;
-  let callee = node.callee;
-  if (callee.type === 'ChainExpression') callee = callee.expression;
-  if (callee.type === 'MemberExpression') return !callee.computed && callee.property?.name === 'K';
-  return callee.type === 'Identifier' && callee.name === 'K';
-}
-
-function shouldCallKabelExpression(expr) {
-  if (expr.type !== 'ArrowFunctionExpression' && expr.type !== 'FunctionExpression') {
-    return false;
-  }
-  if (expr.params.length) {
-    return false;
-  }
-  return expr.body?.type === 'BlockStatement';
-}
-
-function genExprSource(expr) {
-  return escodegen.generate(expr, { format: { semicolons: false } });
-}
-
-function extractPatternPlaceholders(expr) {
-  const templateExpr = cloneNode(expr);
-  const parents = new Map();
-  const targets = [];
-
-  walk(templateExpr, {
-    enter(node, parent, prop, index) {
-      parents.set(node, { parent, prop, index });
-      const patternExpr = getStrudelPatternExpr(node);
-      if (patternExpr) {
-        targets.push({ node, patternExpr });
-        this.skip();
-      }
-    },
-  });
-
-  if (!targets.length) {
-    return { template: genExprSource(templateExpr), patternExprs: [] };
-  }
-
-  targets.sort((a, b) => getPatternNodeOrder(a.node) - getPatternNodeOrder(b.node));
-
-  const patternExprs = targets.map(({ patternExpr }) => cloneNode(patternExpr));
-
-  let currentExpr = templateExpr;
-  targets.forEach(({ node }, index) => {
-    currentExpr = replaceNode(node, placeholderAst(index), parents, currentExpr);
-  });
-
-  const template = genExprSource(currentExpr);
-  return { template, patternExprs };
-}
-
-function getStrudelPatternExpr(node) {
-  if (isStrudelPatternWrap(node)) {
-    const arg = node.arguments?.[0];
-    if (!arg) {
-      throw new Error('S(...) requires an argument');
-    }
-    return arg;
-  }
-  if (isMiniCall(node)) {
-    return node;
-  }
-  return null;
-}
-
-function isStrudelPatternWrap(node) {
-  if (node.type !== 'CallExpression') {
-    return false;
-  }
-  const callee = node.callee;
-  if (callee.type === 'Identifier') {
-    return callee.name === 'S';
-  }
-  if (callee.type === 'MemberExpression' && !callee.computed) {
-    return callee.property?.name === 'S';
-  }
-  return false;
-}
-
-function getMinilangName() {
-  const minilang = languages.get('minilang');
-  return minilang?.name || 'm';
-}
-
-// Used to identify transpiled `m(...)` calls for proper conversion
-// to, say, kabelsalat placeholders
-function isMiniCall(node) {
-  if (node.type !== 'CallExpression') {
-    return false;
-  }
-  const callee = node.callee;
-  if (callee.type !== 'Identifier') {
-    return false;
-  }
-  if (callee.name !== getMinilangName()) {
-    return false;
-  }
-  const firstArg = node.arguments?.[0];
-  return firstArg?.type === 'Literal' && typeof firstArg.value === 'string';
-}
-
-// If `start` is available, we use it. If it's already been transpiled
-// to `m(...)`, use the provided offset
-function getPatternNodeOrder(node) {
-  if (typeof node.start === 'number') {
-    return node.start;
-  }
-  if (isMiniCall(node)) {
-    const offsetArg = node.arguments?.[1];
-    if (offsetArg?.type === 'Literal' && typeof offsetArg.value === 'number') {
-      return offsetArg.value;
-    }
-  }
-  return 0;
-}
-
-function placeholderAst(index) {
-  return {
-    type: 'MemberExpression',
-    object: { type: 'Identifier', name: 'pat' },
-    property: { type: 'Literal', value: index },
-    computed: true,
-    optional: false,
-  };
-}
-
-function replaceNode(node, replacement, parents, currentRoot) {
-  const info = parents.get(node);
-  if (!info || !info.parent) {
-    return replacement;
-  }
-
-  const { parent, prop, index } = info;
-  if (Array.isArray(parent[prop])) {
-    parent[prop][index] = replacement;
-  } else {
-    parent[prop] = replacement;
-  }
-  parents.set(replacement, { parent, prop, index });
-  return currentRoot;
-}
-
-function cloneNode(node) {
-  return JSON.parse(JSON.stringify(node));
-}
-
-function workletMemberAst(objectExpr) {
-  return {
-    type: 'MemberExpression',
-    object: objectExpr,
-    property: { type: 'Identifier', name: 'worklet' },
-    computed: false,
-    optional: false,
-  };
-}
-
-function isStringWithDoubleQuotes(node, locations, code) {
-  if (node.type !== 'Literal') {
-    return false;
-  }
-  return node.raw[0] === '"';
-}
-
-function isBackTickString(node, parent) {
-  return node.type === 'TemplateLiteral' && parent.type !== 'TaggedTemplateExpression';
-}
-
-function miniWithLocation(value, node) {
-  const { start: fromOffset } = node;
-
-  const minilang = languages.get('minilang');
-  let name = 'm';
-  if (minilang && minilang.name) {
-    name = minilang.name; // name is expected to be exported from the package of the minilang
-  }
-
-  return {
-    type: 'CallExpression',
-    callee: {
-      type: 'Identifier',
-      name,
-    },
-    arguments: [
-      { type: 'Literal', value },
-      { type: 'Literal', value: fromOffset },
-    ],
-    optional: false,
-  };
-}
-
-// these functions are connected to @strudel/codemirror -> slider.mjs
-// maybe someday there will be pluggable transpiler functions, then move this there
-function isSliderFunction(node) {
-  return node.type === 'CallExpression' && node.callee.name === 'slider';
-}
-
-function isWidgetMethod(node) {
-  return node.type === 'CallExpression' && widgetMethods.includes(node.callee.property?.name);
-}
-
-function sliderWithLocation(node) {
-  const id = 'slider_' + node.arguments[0].start; // use loc of first arg for id
-  // add loc as identifier to first argument
-  // the sliderWithID function is assumed to be sliderWithID(id, value, min?, max?)
-  node.arguments.unshift({
-    type: 'Literal',
-    value: id,
-    raw: id,
-  });
-  node.callee.name = 'sliderWithID';
-  return node;
-}
-
-export function getWidgetID(widgetConfig) {
-  // the widget id is used as id for the dom element + as key for eventual resources
-  // for example, for each scope widget, a new analyser + buffer (large) is created
-  // that means, if we use the index index of line position as id, less garbage is generated
-  // return `widget_${widgetConfig.to}`; // more gargabe
-  //return `widget_${widgetConfig.index}_${widgetConfig.to}`; // also more garbage
-  return `${widgetConfig.id || ''}_widget_${widgetConfig.type}_${widgetConfig.index}`; // less garbage
-}
-
-function widgetWithLocation(node, widgetConfig) {
-  const id = getWidgetID(widgetConfig);
-  // add loc as identifier to first argument
-  // the sliderWithID function is assumed to be sliderWithID(id, value, min?, max?)
-  node.arguments.unshift({
-    type: 'Literal',
-    value: id,
-    raw: id,
-  });
-  return node;
-}
-
-function isBareSamplesCall(node, parent) {
-  return node.type === 'CallExpression' && node.callee.name === 'samples' && parent.type !== 'AwaitExpression';
-}
-
-function withAwait(node) {
-  return {
-    type: 'AwaitExpression',
-    argument: node,
-  };
+function isAllCall(node) {
+  return node.type === 'CallExpression' && node.callee.name === 'all';
 }
 
 function isLabelStatement(node) {
@@ -491,67 +149,126 @@ function labelToP(node) {
   };
 }
 
-function isLanguageLiteral(node) {
-  return node.type === 'TaggedTemplateExpression' && languages.has(node.tag.name);
+// List of non-inline widgets that need cleanup
+// These are Pattern.prototype methods that create persistent visualizations
+// (should be repalced by a function call producing an actual list of registered widgets)
+const nonInlineWidgets = ['punchcard', 'spiral', 'scope', 'pitchwheel', 'spectrum', 'pianoroll', 'wordfall'];
+
+function isVisualizerCall(node) {
+  if (
+    node.type === 'CallExpression' &&
+    node.callee.type === 'MemberExpression' &&
+    nonInlineWidgets.includes(node.callee.property?.name)
+  ) {
+    return node.callee.property.name;
+  }
+  return null;
 }
 
-// tidal highlighting
-// this feels kind of stupid, when we also know the location inside the string op (tidal.mjs)
-// but maybe it's the only way
+function findVisualizerInSubtree(node) {
+  if (!node || typeof node !== 'object') return null;
 
-function isTemplateLiteral(node, value) {
-  return node.type === 'TaggedTemplateExpression' && node.tag.name === value;
-}
+  // Check if this node is a visualizer call
+  const viz = isVisualizerCall(node);
+  if (viz) return viz;
 
-function collectHaskellMiniLocations(haskellCode, offset) {
-  return haskellCode
-    .split('')
-    .reduce((acc, char, i) => {
-      if (char !== '"') {
-        return acc;
+  // Recursively search children
+  for (const key of Object.keys(node)) {
+    if (key === 'parent') continue; // Skip parent references to avoid cycles
+    const child = node[key];
+    if (Array.isArray(child)) {
+      for (const item of child) {
+        const found = findVisualizerInSubtree(item);
+        if (found) return found;
       }
-      if (!acc.length || acc[acc.length - 1].length > 1) {
-        acc.push([i + 1]);
-      } else {
-        acc[acc.length - 1].push(i);
-      }
-      return acc;
-    }, [])
-    .map(([start, end]) => {
-      const miniString = haskellCode.slice(start, end);
-      return getLeafLocations(`"${miniString}"`, offset + start - 1);
-    })
-    .flat();
+    } else if (child && typeof child === 'object' && child.type) {
+      const found = findVisualizerInSubtree(child);
+      if (found) return found;
+    }
+  }
+  return null;
 }
 
-function tidalWithLocation(value, offset) {
-  return {
-    type: 'CallExpression',
-    callee: {
-      type: 'Identifier',
-      name: 'tidal',
+// Creates AST nodes for: userDefinedKeys.add('name'); strudelScope.name = name; globalThis.name = name;
+// Used in block-based evaluation to persist variables/functions across blocks
+// We add to both strudelScope (for internal lookups) and globalThis (for direct access)
+// We also track the key in userDefinedKeys so clearScope() can remove it later
+function createScopeAssignment(name) {
+  return [
+    // userDefinedKeys.add('name');
+    {
+      type: 'ExpressionStatement',
+      expression: {
+        type: 'CallExpression',
+        callee: {
+          type: 'MemberExpression',
+          object: {
+            type: 'Identifier',
+            name: 'userDefinedKeys',
+          },
+          property: {
+            type: 'Identifier',
+            name: 'add',
+          },
+          computed: false,
+        },
+        arguments: [
+          {
+            type: 'Literal',
+            value: name,
+          },
+        ],
+      },
     },
-    arguments: [
-      { type: 'Literal', value },
-      { type: 'Literal', value: offset },
-    ],
-    optional: false,
-  };
-}
-
-function languageWithLocation(name, value, offset) {
-  return {
-    type: 'CallExpression',
-    callee: {
-      type: 'Identifier',
-      name: name,
+    // strudelScope.name = name;
+    {
+      type: 'ExpressionStatement',
+      expression: {
+        type: 'AssignmentExpression',
+        operator: '=',
+        left: {
+          type: 'MemberExpression',
+          object: {
+            type: 'Identifier',
+            name: 'strudelScope',
+          },
+          property: {
+            type: 'Identifier',
+            name: name,
+          },
+          computed: false,
+        },
+        right: {
+          type: 'Identifier',
+          name: name,
+        },
+      },
     },
-    arguments: [
-      { type: 'Literal', value },
-      { type: 'Literal', value: offset },
-    ],
-    optional: false,
-  };
+    // globalThis.name = name;
+    {
+      type: 'ExpressionStatement',
+      expression: {
+        type: 'AssignmentExpression',
+        operator: '=',
+        left: {
+          type: 'MemberExpression',
+          object: {
+            type: 'Identifier',
+            name: 'globalThis',
+          },
+          property: {
+            type: 'Identifier',
+            name: name,
+          },
+          computed: false,
+        },
+        right: {
+          type: 'Identifier',
+          name: name,
+        },
+      },
+    },
+  ];
 }
 
 function findMiniDisableRanges(comments, codeEnd) {
@@ -572,13 +289,4 @@ function findMiniDisableRanges(comments, codeEnd) {
     ranges.push([start, codeEnd]);
   }
   return ranges;
-}
-
-function isMiniDisabled(offset, miniDisableRanges) {
-  for (const [start, end] of miniDisableRanges) {
-    if (offset >= start && offset < end) {
-      return true;
-    }
-  }
-  return false;
 }

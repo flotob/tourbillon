@@ -70,11 +70,13 @@ export default defineConfig({
       workbox: {
         maximumFileSizeToCacheInBytes: 4194304, // 4MB
         globPatterns: ['**/*.{js,css,html,ico,png,svg,json,wav,mp3,ogg,ttf,woff2,TTF,otf}'],
+        globIgnores: ['img/**', '_astro/csound*.js'],
         runtimeCaching: [
           {
             urlPattern: ({ url }) =>
               [
                 /^https:\/\/raw\.githubusercontent\.com\/.*/i,
+                /^https:\/\/strudel\.b-cdn\.net\/.*/i,
                 /^https:\/\/freesound\.org\/.*/i,
                 /^https:\/\/cdn\.freesound\.org\/.*/i,
                 /^https:\/\/shabda\.ndre\.gr\/.*/i,
@@ -84,7 +86,7 @@ export default defineConfig({
               cacheName: 'external-samples',
               expiration: {
                 maxEntries: 5000,
-                maxAgeSeconds: 60 * 60 * 24 * 30, // <== 14 days
+                maxAgeSeconds: 60 * 60 * 24 * 30, // <== 30 days
               },
               cacheableResponse: {
                 statuses: [0, 200],
@@ -139,6 +141,15 @@ export default defineConfig({
     ssr: {
       // Example: Force a broken package to skip SSR processing, if needed
       // external: ['fraction.js'], // https://github.com/infusion/Fraction.js/issues/51
+    },
+  },
+  server: {
+    // these are needed for dough, which uses shared memory
+    // see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer#security_requirements
+    // this is only for the dev server, so the server strudel runs on, also needs those
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'credentialless',
     },
   },
 });

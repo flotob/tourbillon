@@ -67,13 +67,14 @@ if (typeof window !== 'undefined') {
   });
 }
 
-export const dough = async (code) => {
+export const rawdsp = async (code) => {
   const ac = getAudioContext();
   stop();
   worklet = await dspWorklet(ac, code);
   worklet.node.connect(ac.destination);
 };
 
-export function doughTrigger(hap, currentTime, cps, targetTime) {
-  window.postMessage({ time: targetTime, dough: hap.value, currentTime, duration: hap.duration, cps });
+export function rawdspOutput(hap, time, cps) {
+  const currentTime = getAudioContext().currentTime;
+  window.postMessage({ time, dough: hap.value, currentTime, duration: hap.duration, cps });
 }
