@@ -108,7 +108,6 @@ export function useReplContext() {
         window.parent?.postMessage(code);
 
         setLatestCode(code);
-        window.location.hash = '#' + code2hash(code);
         try {
           window.location.hash = '#' + code2hash(code);
         } catch (e) {
