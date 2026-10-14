@@ -296,7 +296,7 @@ export function repl({
         pending: false,
       });
 
-      afterEval?.({ code, pattern, meta, range: undefined, widgetRemoved: false });
+      afterEval?.({ code, pattern, meta });
       return pattern;
     } catch (err) {
       logger(`[eval] error: ${err.message}`, 'error');
