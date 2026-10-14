@@ -111,48 +111,6 @@ export function repl({
   setTime(() => scheduler.now()); // TODO: refactor?
   setClockTime(() => scheduler.getTime()); // TODO: refactor?
 
-  // Helper function to apply pattern transformations (solo, each, all)
-  // this should be abstracted more
-  function applyPatternTransforms(pattern) {
-    const allPatterns = Object.values(pPatterns);
-
-    if (allPatterns.length) {
-      let patterns = [];
-      let soloActive = false;
-      for (const [key, value] of Object.entries(pPatterns)) {
-        // handle soloed patterns ex: S$: s("bd!4")
-        const isSolod = key.length > 1 && key.startsWith('S');
-        if (isSolod && soloActive === false) {
-          // first time we see a soloed pattern, clear existing patterns
-          patterns = [];
-          soloActive = true;
-        }
-        if (!soloActive || (soloActive && isSolod)) {
-          const valWithState = value.withState((state) => state.setControls({ id: key }));
-          patterns.push(valWithState);
-        }
-      }
-      if (eachTransform) {
-        // Explicit lambda so only element (not index and array) are passed
-        patterns = patterns.map((x) => eachTransform(x));
-      }
-      pattern = stack(...patterns);
-    } else if (eachTransform) {
-      pattern = eachTransform(pattern);
-    }
-    if (allTransforms.length) {
-      for (const transform of allTransforms) {
-        pattern = transform(pattern);
-      }
-    }
-
-    if (!isPattern(pattern)) {
-      pattern = silence;
-    }
-
-    return pattern;
-  }
-
   const stop = () => scheduler.stop();
   const start = () => scheduler.start();
   const pause = () => scheduler.pause();
@@ -291,8 +249,39 @@ export function repl({
         code = `mondolang\`${code}\``;
       }
       let { pattern, meta } = await _evaluate(code, transpiler, transpilerOptions);
+      if (Object.keys(pPatterns).length) {
+        let patterns = [];
+        let soloActive = false;
+        for (const [key, value] of Object.entries(pPatterns)) {
+          // handle soloed patterns ex: S$: s("bd!4")
+          const isSolod = key.length > 1 && key.startsWith('S');
+          if (isSolod && soloActive === false) {
+            // first time we see a soloed pattern, clear existing patterns
+            patterns = [];
+            soloActive = true;
+          }
+          if (!soloActive || (soloActive && isSolod)) {
+            const valWithState = value.withState((state) => state.setControls({ id: key }));
+            patterns.push(valWithState);
+          }
+        }
+        if (eachTransform) {
+          // Explicit lambda so only element (not index and array) are passed
+          patterns = patterns.map((x) => eachTransform(x));
+        }
+        pattern = stack(...patterns);
+      } else if (eachTransform) {
+        pattern = eachTransform(pattern);
+      }
+      if (allTransforms.length) {
+        for (const transform of allTransforms) {
+          pattern = transform(pattern);
+        }
+      }
 
-      pattern = applyPatternTransforms(pattern);
+      if (!isPattern(pattern)) {
+        pattern = silence;
+      }
 
       logger(`[eval] code updated`);
       pattern = await setPattern(pattern, autostart);
