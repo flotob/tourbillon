@@ -94,9 +94,6 @@ export function getWidgetID(widgetConfig) {
 
 function widgetWithLocation(node, widgetConfig) {
   const id = getWidgetID(widgetConfig);
-  // Store the unique ID back into the config so it's available for widget management
-  // This is critical for block-based evaluation to match existing widgets with new ones
-  widgetConfig.id = id;
   // add loc as identifier to first argument
   // the sliderWithID function is assumed to be sliderWithID(id, value, min?, max?)
   node.arguments.unshift({
