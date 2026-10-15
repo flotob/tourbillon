@@ -1,12 +1,15 @@
-import { code2hash, errorLogger, evalScope, hash2code, logger } from '@strudel/core';
+import * as strudelCore from '@strudel/core';
+import * as strudelWebaudio from '@strudel/webaudio';
 import { settingPatterns } from '../settings.mjs';
-import { setVersionDefaults } from '@strudel/webaudio';
-import { getMetadata } from '../metadata_parser';
+import { getMetadata } from '../metadata_parser.js';
 import { isTauri } from '../tauri.mjs';
 import './Repl.css';
 import { createClient } from '@supabase/supabase-js';
 import { writeText } from '@tauri-apps/plugin-clipboard-manager';
-import { $featuredPatterns /* , loadDBPatterns */ } from '@src/user_pattern_utils.mjs';
+import { $featuredPatterns } from '@src/user_pattern_utils.mjs';
+
+const { setVersionDefaults } = strudelWebaudio;
+const { code2hash, errorLogger, evalScope, hash2code, logger } = strudelCore;
 
 // Create a single supabase client for interacting with your database
 export const supabase = createClient(
@@ -68,13 +71,13 @@ export async function getRandomTune() {
 
 export function loadModules() {
   let modules = [
-    import('@strudel/core'),
+    strudelCore,
     import('@strudel/draw'),
     import('@strudel/edo'),
     import('@strudel/tonal'),
     import('@strudel/mini'),
     import('@strudel/xen'),
-    import('@strudel/webaudio'),
+    strudelWebaudio,
     import('@strudel/codemirror'),
     import('@strudel/hydra'),
     import('@strudel/serial'),

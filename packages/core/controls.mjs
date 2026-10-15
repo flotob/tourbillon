@@ -519,10 +519,10 @@ export const { fmh, fmh1, fmh2, fmh3, fmh4, fmh5, fmh6, fmh7, fmh8 } = registerM
  * each other with matrix commands like `fm13`, which would send `fm1` back into
  * `fm3`
  *
- * @name fmi
+ * @name fm
  * @tags fm, superdough, supradough
  * @param {number | Pattern} brightness modulation index
- * @synonyms fm
+ * @synonyms fmi
  * @example
  * note("c e g b g e")
  * .fm("<0 1 2 8 32>")
