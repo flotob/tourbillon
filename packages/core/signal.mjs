@@ -420,7 +420,7 @@ export const binaryNL = (n, nBits = 16) => {
  *   .partials(randL(8))
  */
 export const randL = (n) => {
-  return signal((t) => (nVal) => getRandsAtTime(t, nVal).map(Math.abs)).appLeft(reify(n));
+  return signal((t, controls) => (nVal) => getRandsAtTime(t, nVal, controls.randSeed).map(Math.abs)).appLeft(reify(n));
 };
 
 export const randrun = (n) => {
