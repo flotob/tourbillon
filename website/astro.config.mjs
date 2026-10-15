@@ -80,6 +80,7 @@ export default defineConfig({
                 /^https:\/\/freesound\.org\/.*/i,
                 /^https:\/\/cdn\.freesound\.org\/.*/i,
                 /^https:\/\/shabda\.ndre\.gr\/.*/i,
+                /^https:\/\/felixroos\.github\.io\/webaudiofontdata\/.*/i,
               ].some((regex) => regex.test(url)),
             handler: 'CacheFirst',
             options: {
