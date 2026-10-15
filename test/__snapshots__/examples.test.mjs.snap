@@ -2440,6 +2440,43 @@ exports[`runs examples > example "clip" example index 0 1`] = `
 ]
 `;
 
+exports[`runs examples > example "close" example index 0 1`] = `
+[
+  "[ 0/1 → 1/8 | s:bd cutoff:3000 ]",
+  "[ 1/8 → 1/4 | s:sd cutoff:2915.625 ]",
+  "[ 5/16 → 3/8 | s:bd cutoff:2789.0625 ]",
+  "[ 3/8 → 1/2 | s:sd cutoff:2746.875 ]",
+  "[ 1/2 → 5/8 | s:bd cutoff:2662.5 ]",
+  "[ 5/8 → 3/4 | s:sd cutoff:2578.125 ]",
+  "[ 13/16 → 7/8 | s:bd cutoff:2451.5625 ]",
+  "[ 7/8 → 1/1 | s:sd cutoff:2409.375 ]",
+  "[ 1/1 → 9/8 | s:bd cutoff:2325 ]",
+  "[ 9/8 → 5/4 | s:sd cutoff:2240.625 ]",
+  "[ 21/16 → 11/8 | s:bd cutoff:2114.0625 ]",
+  "[ 11/8 → 3/2 | s:sd cutoff:2071.875 ]",
+  "[ 3/2 → 13/8 | s:bd cutoff:1987.5 ]",
+  "[ 13/8 → 7/4 | s:sd cutoff:1903.125 ]",
+  "[ 29/16 → 15/8 | s:bd cutoff:1776.5625 ]",
+  "[ 15/8 → 2/1 | s:sd cutoff:1734.375 ]",
+  "[ 2/1 → 17/8 | s:bd cutoff:1650 ]",
+  "[ 17/8 → 9/4 | s:sd cutoff:1565.625 ]",
+  "[ 37/16 → 19/8 | s:bd cutoff:1439.0625 ]",
+  "[ 19/8 → 5/2 | s:sd cutoff:1396.875 ]",
+  "[ 5/2 → 21/8 | s:bd cutoff:1312.5 ]",
+  "[ 21/8 → 11/4 | s:sd cutoff:1228.125 ]",
+  "[ 45/16 → 23/8 | s:bd cutoff:1101.5625 ]",
+  "[ 23/8 → 3/1 | s:sd cutoff:1059.375 ]",
+  "[ 3/1 → 25/8 | s:bd cutoff:975 ]",
+  "[ 25/8 → 13/4 | s:sd cutoff:890.625 ]",
+  "[ 53/16 → 27/8 | s:bd cutoff:764.0625 ]",
+  "[ 27/8 → 7/2 | s:sd cutoff:721.875 ]",
+  "[ 7/2 → 29/8 | s:bd cutoff:637.5 ]",
+  "[ 29/8 → 15/4 | s:sd cutoff:553.125 ]",
+  "[ 61/16 → 31/8 | s:bd cutoff:426.5625 ]",
+  "[ 31/8 → 4/1 | s:sd cutoff:384.375 ]",
+]
+`;
+
 exports[`runs examples > example "coarse" example index 0 1`] = `
 [
   "[ 0/1 → 1/8 | s:hh coarse:1 ]",
@@ -8724,6 +8761,43 @@ exports[`runs examples > example "onTriggerTime" example index 0 1`] = `
   "[ 29/8 → 15/4 | s:bd ]",
   "[ 15/4 → 31/8 | s:bd ]",
   "[ 31/8 → 4/1 | s:bd ]",
+]
+`;
+
+exports[`runs examples > example "open" example index 0 1`] = `
+[
+  "[ 0/1 → 1/8 | s:bd cutoff:300 ]",
+  "[ 1/8 → 1/4 | s:sd cutoff:384.375 ]",
+  "[ 5/16 → 3/8 | s:bd cutoff:510.9375 ]",
+  "[ 3/8 → 1/2 | s:sd cutoff:553.125 ]",
+  "[ 1/2 → 5/8 | s:bd cutoff:637.5 ]",
+  "[ 5/8 → 3/4 | s:sd cutoff:721.875 ]",
+  "[ 13/16 → 7/8 | s:bd cutoff:848.4375 ]",
+  "[ 7/8 → 1/1 | s:sd cutoff:890.625 ]",
+  "[ 1/1 → 9/8 | s:bd cutoff:975 ]",
+  "[ 9/8 → 5/4 | s:sd cutoff:1059.375 ]",
+  "[ 21/16 → 11/8 | s:bd cutoff:1185.9375 ]",
+  "[ 11/8 → 3/2 | s:sd cutoff:1228.125 ]",
+  "[ 3/2 → 13/8 | s:bd cutoff:1312.5 ]",
+  "[ 13/8 → 7/4 | s:sd cutoff:1396.875 ]",
+  "[ 29/16 → 15/8 | s:bd cutoff:1523.4375 ]",
+  "[ 15/8 → 2/1 | s:sd cutoff:1565.625 ]",
+  "[ 2/1 → 17/8 | s:bd cutoff:1650 ]",
+  "[ 17/8 → 9/4 | s:sd cutoff:1734.375 ]",
+  "[ 37/16 → 19/8 | s:bd cutoff:1860.9375 ]",
+  "[ 19/8 → 5/2 | s:sd cutoff:1903.125 ]",
+  "[ 5/2 → 21/8 | s:bd cutoff:1987.5 ]",
+  "[ 21/8 → 11/4 | s:sd cutoff:2071.875 ]",
+  "[ 45/16 → 23/8 | s:bd cutoff:2198.4375 ]",
+  "[ 23/8 → 3/1 | s:sd cutoff:2240.625 ]",
+  "[ 3/1 → 25/8 | s:bd cutoff:2325 ]",
+  "[ 25/8 → 13/4 | s:sd cutoff:2409.375 ]",
+  "[ 53/16 → 27/8 | s:bd cutoff:2535.9375 ]",
+  "[ 27/8 → 7/2 | s:sd cutoff:2578.125 ]",
+  "[ 7/2 → 29/8 | s:bd cutoff:2662.5 ]",
+  "[ 29/8 → 15/4 | s:sd cutoff:2746.875 ]",
+  "[ 61/16 → 31/8 | s:bd cutoff:2873.4375 ]",
+  "[ 31/8 → 4/1 | s:sd cutoff:2915.625 ]",
 ]
 `;
 
