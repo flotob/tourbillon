@@ -242,24 +242,15 @@ importers:
       '@strudel/draw':
         specifier: workspace:*
         version: link:../draw
-      '@strudel/tonal':
-        specifier: workspace:*
-        version: link:../tonal
       '@strudel/transpiler':
         specifier: workspace:*
         version: link:../transpiler
-      '@tonaljs/tonal':
-        specifier: ^4.10.0
-        version: 4.10.0
       codemirror-helix:
         specifier: ^0.5.0
         version: 0.5.0(@codemirror/commands@6.8.0)(@codemirror/language@6.10.8)(@codemirror/search@6.5.8)(@codemirror/state@6.5.1)(@codemirror/view@6.36.2)
       nanostores:
         specifier: ^0.11.3
         version: 0.11.3
-      superdough:
-        specifier: workspace:*
-        version: link:../superdough
     devDependencies:
       vite:
         specifier: ^6.0.11
