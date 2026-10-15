@@ -5,9 +5,8 @@ import { Textbox } from '@src/repl/components/panel/SettingsTab';
 import { settingsMap, useSettings } from '@src/settings.mjs';
 
 const isValid = ({ name, description, tags = [] }) => {
-  const isSupradoughOnly = tags.includes('supradough') && !tags.includes('superdough');
   const isSuperdirtOnly = tags.includes('superdirt') && !tags.includes('superdough');
-  return name && !name.startsWith('_') && !!description && !isSupradoughOnly && !isSuperdirtOnly;
+  return name && !name.startsWith('_') && !!description && !isSuperdirtOnly;
 };
 
 const availableFunctions = (() => {
@@ -38,7 +37,7 @@ const availableFunctions = (() => {
 })();
 
 const tagCounts = {};
-const ignoredTags = ['supradough', 'superdirt'];
+const ignoredTags = ['superdirt'];
 // const tagOptions = { all: `all (${availableFunctions.length})` };
 const tagOptions = { all: `all` };
 for (const doc of availableFunctions) {
@@ -214,7 +213,12 @@ export const Reference = memo(function Reference() {
                 </p>
               )}
 
-              <p dangerouslySetInnerHTML={{ __html: entry.description }}></p>
+              <p
+                dangerouslySetInnerHTML={{
+                  // If we have an external url make sure it opens in another tab to not interrupt the player
+                  __html: entry.description.replaceAll(/<a href="https:\/\//g, `<a target="_blank" href="https://`),
+                }}
+              ></p>
               <ul>
                 {entry.params?.map(({ name, type, description }, i) => (
                   <li key={i}>

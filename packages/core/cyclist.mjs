@@ -10,6 +10,7 @@ import { errorLogger, logger } from './logger.mjs';
 export class Cyclist {
   constructor({
     interval,
+    onSchedule,
     onTrigger,
     onToggle,
     onError,
@@ -19,6 +20,11 @@ export class Cyclist {
     clearInterval,
     beforeStart,
   }) {
+    if (onTrigger) {
+      throw new Error(
+        'onTrigger has been dropped. use onSchedule(hap, time, cps) instead, see https://codeberg.org/uzu/strudel/pulls/2138',
+      );
+    }
     this.started = false;
     this.beforeStart = beforeStart;
     this.cps = 0.5;
@@ -63,12 +69,7 @@ export class Cyclist {
             if (hap.hasOnset()) {
               const targetTime =
                 (hap.whole.begin - this.num_cycles_at_cps_change) / this.cps + this.seconds_at_cps_change + latency;
-              const duration = hap.duration / this.cps;
-              // the following line is dumb and only here for backwards compatibility
-              // see https://codeberg.org/uzu/strudel/pulls/1004
-              const deadline = targetTime - phase;
-              // this onTrigger has another signature
-              onTrigger?.(hap, deadline, duration, this.cps, targetTime);
+              onSchedule?.(hap, targetTime, this.cps);
               if (hap.value.cps !== undefined && this.cps != hap.value.cps) {
                 this.cps = hap.value.cps;
                 this.num_ticks_since_cps_change = 0;

@@ -9,7 +9,7 @@ import { confirmDialog } from '../../util.mjs';
 import { DEFAULT_MAX_POLYPHONY, setMaxPolyphony, setMultiChannelOrbits } from '@strudel/webaudio';
 import { ActionButton } from '../button/action-button.jsx';
 import { exportScript, ImportPrebakeScriptButton } from './ImportPrebakeScriptButton.jsx';
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import cx from '@src/cx.mjs';
 
 const inputClass =
@@ -147,7 +147,6 @@ function MainSettingsContent({ started }) {
     isTabIndentationEnabled,
     isMultiCursorEnabled,
     patternAutoStart,
-    isBlockBasedEvalEnabled,
   } = useSettings();
   const shouldAlwaysSync = isUdels();
   const canChangeAudioDevice = AudioContext.prototype.setSinkId != null;
@@ -235,7 +234,7 @@ function MainSettingsContent({ started }) {
         <ButtonGroup
           value={keybindings}
           onChange={(keybindings) => settingsMap.setKey('keybindings', keybindings)}
-          items={{ codemirror: 'Codemirror', vim: 'Vim', emacs: 'Emacs', helix: 'Helix', vscode: 'VSCode' }}
+          items={{ codemirror: 'Codemirror', vim: 'Vim', emacs: 'Emacs', vscode: 'VSCode' }}
         ></ButtonGroup>
       </FormItem>
       <FormItem label="Panel Position">
@@ -297,11 +296,6 @@ function MainSettingsContent({ started }) {
           value={isMultiCursorEnabled}
         />
         <Checkbox
-          label="Enable Block-based Evaluation (EXPERIMENTAL)"
-          onChange={(cbEvent) => settingsMap.setKey('isBlockBasedEvalEnabled', cbEvent.target.checked)}
-          value={isBlockBasedEvalEnabled}
-        />
-        <Checkbox
           label="Enable flashing on evaluation"
           onChange={(cbEvent) => settingsMap.setKey('isFlashEnabled', cbEvent.target.checked)}
           value={isFlashEnabled}
@@ -356,11 +350,6 @@ function MainSettingsContent({ started }) {
 function PrebakeSettingsContent() {
   const { fontFamily, includePrebakeScriptInShare, prebakeScript } = useSettings();
   const editorRef = useRef();
-  useEffect(() => {
-    return () => {
-      editorRef.current?.cleanup();
-    };
-  });
 
   return (
     <div className="flex flex-col h-full text-foreground w-full overflow-auto" style={{ fontFamily }}>
