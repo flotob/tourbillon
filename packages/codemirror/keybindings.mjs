@@ -6,7 +6,6 @@ import { emacs } from '@replit/codemirror-emacs';
 import { vim } from '@replit/codemirror-vim';
 // import { vim } from './vim_test.mjs';
 import { vscodeKeymap } from '@replit/codemirror-vscode-keymap';
-import { helix } from 'codemirror-helix';
 
 const vscodePlugin = ViewPlugin.fromClass(
   class {
@@ -25,7 +24,6 @@ const keymaps = {
   emacs,
   codemirror: () => keymap.of(defaultKeymap),
   vscode: vscodeExtension,
-  helix: () => [helix()],
 };
 
 export { Vim } from '@replit/codemirror-vim';

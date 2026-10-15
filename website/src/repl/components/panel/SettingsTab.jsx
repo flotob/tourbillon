@@ -147,7 +147,6 @@ function MainSettingsContent({ started }) {
     isTabIndentationEnabled,
     isMultiCursorEnabled,
     patternAutoStart,
-    isBlockBasedEvalEnabled,
   } = useSettings();
   const shouldAlwaysSync = isUdels();
   const canChangeAudioDevice = AudioContext.prototype.setSinkId != null;
@@ -235,7 +234,7 @@ function MainSettingsContent({ started }) {
         <ButtonGroup
           value={keybindings}
           onChange={(keybindings) => settingsMap.setKey('keybindings', keybindings)}
-          items={{ codemirror: 'Codemirror', vim: 'Vim', emacs: 'Emacs', helix: 'Helix', vscode: 'VSCode' }}
+          items={{ codemirror: 'Codemirror', vim: 'Vim', emacs: 'Emacs', vscode: 'VSCode' }}
         ></ButtonGroup>
       </FormItem>
       <FormItem label="Panel Position">
@@ -295,11 +294,6 @@ function MainSettingsContent({ started }) {
           label="Enable Multi-Cursor (Cmd/Ctrl+Click)"
           onChange={(cbEvent) => settingsMap.setKey('isMultiCursorEnabled', cbEvent.target.checked)}
           value={isMultiCursorEnabled}
-        />
-        <Checkbox
-          label="Enable Block-based Evaluation (EXPERIMENTAL)"
-          onChange={(cbEvent) => settingsMap.setKey('isBlockBasedEvalEnabled', cbEvent.target.checked)}
-          value={isBlockBasedEvalEnabled}
         />
         <Checkbox
           label="Enable flashing on evaluation"
