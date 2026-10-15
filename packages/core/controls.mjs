@@ -1905,7 +1905,6 @@ export const { delayfeedback, delayfb, dfb } = registerControl('delayfeedback', 
  * .s("sawtooth")
  * .delay(.8)
  * .delaytime(1/2)
- * .delayspeed("<2 .5 -1 -2>")
  */
 export const { delaytime, delayt, dt } = registerControl('delaytime', 'delayt', 'dt');
 
