@@ -5,9 +5,8 @@ import { Textbox } from '@src/repl/components/panel/SettingsTab';
 import { settingsMap, useSettings } from '@src/settings.mjs';
 
 const isValid = ({ name, description, tags = [] }) => {
-  const isSupradoughOnly = tags.includes('supradough') && !tags.includes('superdough');
   const isSuperdirtOnly = tags.includes('superdirt') && !tags.includes('superdough');
-  return name && !name.startsWith('_') && !!description && !isSupradoughOnly && !isSuperdirtOnly;
+  return name && !name.startsWith('_') && !!description && !isSuperdirtOnly;
 };
 
 const availableFunctions = (() => {
@@ -38,7 +37,7 @@ const availableFunctions = (() => {
 })();
 
 const tagCounts = {};
-const ignoredTags = ['supradough', 'superdirt'];
+const ignoredTags = ['superdirt'];
 // const tagOptions = { all: `all (${availableFunctions.length})` };
 const tagOptions = { all: `all` };
 for (const doc of availableFunctions) {
