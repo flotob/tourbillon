@@ -4,18 +4,19 @@ packages:
   - tools/dbpatch
   - website/
 
-onlyBuiltDependencies:
+catalog:
+  '@codemirror/autocomplete': ^6.18.4
+  '@codemirror/commands': ^6.8.0
+  '@codemirror/lang-javascript': ^6.2.2
+  '@codemirror/language': ^6.10.8
+  '@codemirror/search': ^6.5.8
+  '@codemirror/state': ^6.5.1
+  '@codemirror/view': ^6.36.2
+
+ignoredBuiltDependencies:
+  - '@serialport/bindings-cpp'
+  - tree-sitter-haskell
+  - tree-sitter
   - esbuild
   - nx
   - sharp
-  - tree-sitter
-  - tree-sitter-haskell
-
-catalog:
-  "@codemirror/commands": "^6.8.0"
-  "@codemirror/language": "^6.10.8"
-  "@codemirror/lang-javascript": "^6.2.2"
-  "@codemirror/state": "^6.5.1"
-  "@codemirror/view": "^6.36.2"
-  "@codemirror/autocomplete": "^6.18.4"
-  "@codemirror/search": "^6.5.8"

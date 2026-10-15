@@ -17,10 +17,7 @@ import {
   resetGlobalEffects,
   errorLogger,
 } from 'superdough';
-import './supradough.mjs';
-import { workletUrl } from 'supradough';
 import { SuperdoughAudioController } from 'superdough/superdoughoutput.mjs';
-registerWorklet(workletUrl);
 
 const { Pattern, logger, repl } = strudel;
 

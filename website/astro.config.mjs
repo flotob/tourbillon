@@ -10,11 +10,8 @@ import bundleAudioWorkletPlugin from 'vite-plugin-bundle-audioworklet';
 import tailwind from '@astrojs/tailwind';
 import AstroPWA from '@vite-pwa/astro';
 
-import process from 'node:process';
-
-const site = process.env.SITE_URL || `https://strudel.cc/`; // root url without a path
-const base = process.env.BASE_PATH || ''; // base path of the strudel site
-
+const site = process.env.STRUDEL_SITE || `https://strudel.cc/`; // root url without a path
+const base = process.env.STRUDEL_BASE || '/'; // base path of the strudel site
 const baseNoTrailing = base.endsWith('/') ? base.slice(0, -1) : base;
 
 // this rehype plugin fixes relative links
@@ -73,6 +70,7 @@ export default defineConfig({
       workbox: {
         maximumFileSizeToCacheInBytes: 4194304, // 4MB
         globPatterns: ['**/*.{js,css,html,ico,png,svg,json,wav,mp3,ogg,ttf,woff2,TTF,otf}'],
+        globIgnores: ['img/**', '_astro/csound*.js'],
         runtimeCaching: [
           {
             urlPattern: ({ url }) =>
@@ -88,7 +86,7 @@ export default defineConfig({
               cacheName: 'external-samples',
               expiration: {
                 maxEntries: 5000,
-                maxAgeSeconds: 60 * 60 * 24 * 30, // <== 14 days
+                maxAgeSeconds: 60 * 60 * 24 * 30, // <== 30 days
               },
               cacheableResponse: {
                 statuses: [0, 200],
