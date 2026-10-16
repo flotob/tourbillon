@@ -74,6 +74,7 @@ export class Cyclist {
             // query the pattern for events
             const haps = this.pattern
               .queryArc(begin, end, { _cps: this.cps, cyclist: 'cyclist' })
+              .filter((hap) => hap.hasOnset())
               // Sort the haps based on their onset, so cps changes within the
               // tick duration happen in the correct order.
               .sort((a, b) => {
@@ -95,25 +96,23 @@ export class Cyclist {
               });
 
             haps.forEach((hap) => {
-              if (hap.hasOnset()) {
-                const targetTime = (hap.whole.begin - this.checkpoint.cycles) / this.cps + this.checkpoint.seconds;
-                if (tickEndTime < targetTime) {
-                  // If the targetTime exceeds the tickEndTime, this means
-                  // the cps has slowed down, and the latter haps from the query
-                  // no longer fall within the window of the current tick.
-                  // They'll be scheduled during the next tick.
-                  return;
-                }
-                onSchedule?.(hap, targetTime, hap.value.cps ?? this.cps);
-                if (hap.value.cps !== undefined && this.cps != hap.value.cps) {
-                  cpsChanged = true;
-                  this.cps = hap.value.cps;
-                  this.num_ticks_since_checkpoint = 0;
-                  this.checkpoint = {
-                    cycles: hap.whole.begin,
-                    seconds: targetTime,
-                  };
-                }
+              const targetTime = (hap.whole.begin - this.checkpoint.cycles) / this.cps + this.checkpoint.seconds;
+              if (tickEndTime < targetTime) {
+                // If the targetTime exceeds the tickEndTime, this means
+                // the cps has slowed down, and the latter haps from the query
+                // no longer fall within the window of the current tick.
+                // They'll be scheduled during the next tick.
+                return;
+              }
+              onSchedule?.(hap, targetTime + this.latency, hap.value.cps ?? this.cps);
+              if (hap.value.cps !== undefined && this.cps != hap.value.cps) {
+                cpsChanged = true;
+                this.cps = hap.value.cps;
+                this.num_ticks_since_checkpoint = 0;
+                this.checkpoint = {
+                  cycles: hap.whole.begin,
+                  seconds: targetTime,
+                };
               }
             });
 
