@@ -78,12 +78,12 @@ export class Cyclist {
               // Sort the haps based on their onset, so cps changes within the
               // tick duration happen in the correct order.
               .sort((a, b) => {
-                const aBegin = a.whole.begin.valueOf();
-                const bBegin = b.whole.begin.valueOf();
+                const aBegin = a.whole.begin;
+                const bBegin = b.whole.begin;
                 // If haps happen at the same time, trigger the haps that cause
                 // cps changes first, so the durations of the simultaneous haps
                 // are adjusted accordingly.
-                if (aBegin === bBegin) {
+                if (aBegin.eq(bBegin)) {
                   if (a.value.cps !== undefined) {
                     return b.value.cps !== undefined ? 0 : -1;
                   }
@@ -92,7 +92,7 @@ export class Cyclist {
                   }
                   return 0;
                 }
-                return aBegin - bBegin;
+                return aBegin.sub(bBegin);
               });
 
             haps.forEach((hap) => {
