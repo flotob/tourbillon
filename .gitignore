@@ -131,3 +131,6 @@ fabric.properties
 samples/*
 !samples/README.md
 .idea/
+
+.vscode
+!settings.json
