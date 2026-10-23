@@ -12,8 +12,8 @@ If you are being harassed, notice that someone else is being harassed, or have a
 
 If you report an incident of harassment you can expect to be listened to and taken seriously. The admin will take action they deem appropriate in response depending on the scale and severity of the incident. For example:
 
-1. Discuss the perpetrator’s behaviour with them and ask them to stop. Explain what they have done and why it is unacceptable. Remind the perpetrator of the code of conduct. Monitor the perpetrator’s behaviour and if it improves then they will continue to be welcome.
-2. Temporarily exclude the perpetrator from the forum for a cool-off period. Explain what they have done and why it is unacceptable and remind them of the code of conduct. Monitor the person’s behaviour and if it improves then they will continue to be welcome.
+1. Discuss the perpetrator's behaviour with them and ask them to stop. Explain what they have done and why it is unacceptable. Remind the perpetrator of the code of conduct. Monitor the perpetrator's behaviour and if it improves then they will continue to be welcome.
+2. Temporarily exclude the perpetrator from the forum for a cool-off period. Explain what they have done and why it is unacceptable and remind them of the code of conduct. Monitor the person's behaviour and if it improves then they will continue to be welcome.
 3. Remove the perpetrator from the forum. Explain what they have done and why it is unacceptable and remind them of the code of conduct.
 
 # Post-AI humane policy for live coding development
