@@ -38,4 +38,4 @@ All community members should be treated with respect and kindness. We welcome co
 * We encourage asking each other questions and working through problems to promote collective knowledge and creative ideas (never telling each other to "just google it").
 * We strongly discourage others from forking/importing our projects into corporate AI platforms, including Microsoft Github.
 * All contributions must be submitted by a human who understands the changes, is happy to answer questions about them, and where possible, help maintain the code in the future.
-* Where stipulated, discussion (including criticism) of LLM technology and use should be kept to designated channels.
+* In community discussion channels (at the time of writing, this refers to the uzu discord server), all discussion (including criticism) of LLM technology and use should be kept to designated channels.
