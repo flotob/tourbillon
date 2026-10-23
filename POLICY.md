@@ -26,9 +26,9 @@ All community members should be treated with respect and kindness. We welcome co
 
 ## Principles
 
-* We wish to protect the humanity of our communities and projects, to support the motivation and mental health of all of its contributors and users.
+* We wish to protect the humanity of our communities and projects, to support the motivation and well-being of all of its contributors and users.
 * To this end, contributors and other users of our projects should not have to engage with LLM-generated code and text as part of their community work.
-* We recognise that LLM-based scraping and generation of (A)GPL code shared by ourselves and others is of questionable legality. For example under many juristictions, LLM-generated work does not have a copyright holder and can therefore not be licensed under the (A)GPL.
+* We recognise that LLM-based scraping and generation of (A)GPL code shared by ourselves and others is of questionable legality. For example, under many juristictions, LLM-generated work does not have a copyright holder and can therefore not be licensed under the (A)GPL.
 * A contributor's personal use of LLMs and related technology is their own business, whether for research, analysis, bug discovery or other assistive technology, so long as the output is not included in any contributions to our projects.
 
 ## In practice
