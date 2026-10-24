@@ -12,8 +12,10 @@ import { Reference } from './Reference';
 import { SettingsTab } from './SettingsTab';
 import { SoundsTab } from './SoundsTab';
 import { WelcomeTab } from './WelcomeTab';
+import { AgentTab } from '../../agent/AgentTab';
 
 const TAURI = typeof window !== 'undefined' && window.__TAURI__;
+const DESKTOP = typeof window !== 'undefined' && window.tourbillon?.desktop;
 
 const { BASE_URL } = import.meta.env;
 const baseNoTrailing = BASE_URL.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL;
@@ -230,6 +232,7 @@ export function RightPanel({ context }) {
 }
 
 const tabNames = {
+  ...(DESKTOP && { agent: 'agent' }),
   welcome: 'intro',
   patterns: 'patterns',
   sounds: 'sounds',
@@ -263,6 +266,8 @@ function PanelNav({ children, className, ...props }) {
 function PanelContent({ context, tab }) {
   useLogger();
   switch (tab) {
+    case tabNames.agent:
+      return <AgentTab />;
     case tabNames.patterns:
       return <PatternsTab context={context} />;
     case tabNames.console:

@@ -15,6 +15,20 @@ pnpm desktop:prod   # builds the website, then runs electron on website/dist
 
 The Electron shell lives in [desktop/](desktop/).
 
+### Agent
+
+The agent tab runs [pi](https://pi.dev) in the Electron main process ([desktop/agent/](desktop/agent/)), with editor
+tools implemented in [website/src/repl/agent/](website/src/repl/agent/). Sign in with ChatGPT from the tab; the
+credentials are stored in the app's data folder (`~/Library/Application Support/Tourbillon/agent` on macOS), never in
+the repo. The agent writes into the editor but never evaluates: press Ctrl+Enter to hear its changes, Cmd+Z undoes an
+agent edit.
+
+For development:
+
+- `TOURBILLON_AGENT_SCRIPT=scripts/agent-smoke.mjs pnpm desktop` replaces the model with a scripted one that runs every
+  tool once, no account needed.
+- `TOURBILLON_USER_DATA=/some/dir pnpm desktop` runs with a separate profile.
+
 Everything below is the original Strudel README.
 
 ---

@@ -2,6 +2,7 @@ import { app, BrowserWindow, net, protocol, session, shell } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { setupAgent } from './agent/host.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -10,7 +11,13 @@ const devServerUrl = process.env.TOURBILLON_DEV_URL;
 const distDir = path.resolve(__dirname, '../website/dist');
 const appOrigin = 'app://tourbillon';
 
+let mainWindow;
+
 app.setName('Tourbillon');
+// lets tests run with a separate profile, e.g. TOURBILLON_USER_DATA=/tmp/tourbillon-test
+if (process.env.TOURBILLON_USER_DATA) {
+  app.setPath('userData', process.env.TOURBILLON_USER_DATA);
+}
 
 // sound should start when evaluating via keyboard, without a prior click
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
@@ -84,14 +91,21 @@ function createWindow() {
       shell.openExternal(url);
     }
   });
+  win.on('closed', () => {
+    if (mainWindow === win) {
+      mainWindow = undefined;
+    }
+  });
   win.loadURL(devServerUrl ?? `${appOrigin}/`);
+  mainWindow = win;
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   if (!devServerUrl) {
     serveDist();
   }
   setPermissions();
+  await setupAgent({ getWindow: () => mainWindow, repoDir: path.resolve(__dirname, '..') });
   createWindow();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
