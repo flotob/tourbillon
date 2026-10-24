@@ -39,7 +39,7 @@ import './Repl.css';
 import { setInterval, clearInterval } from 'worker-timers';
 import { getMetadata } from '../metadata_parser';
 import { debugAudiograph } from './audiograph';
-import { codeChanged, evaluated, initTracks } from './tracks/tracksStore.mjs';
+import { evaluated, initTracks, replStateChanged } from './tracks/tracksStore.mjs';
 
 const { latestCode, maxPolyphony, audioDeviceName, multiChannelOrbits } = settingsMap.get();
 let modulesLoading, presets, drawContext, clearCanvas, audioReady;
@@ -100,7 +100,7 @@ export function useReplContext() {
       onUpdateState: (state) => {
         setReplState({ ...state });
         if (DESKTOP) {
-          codeChanged(state.code);
+          replStateChanged(state);
         }
       },
       onToggle: (playing) => {

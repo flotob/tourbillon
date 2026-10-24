@@ -1,4 +1,4 @@
-import { app, BrowserWindow, net, protocol, session, shell } from 'electron';
+import { app, BrowserWindow, Menu, net, protocol, session, shell } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -58,6 +58,27 @@ function setPermissions() {
   session.defaultSession.setPermissionCheckHandler((_webContents, permission) => allowedPermissions.has(permission));
 }
 
+// the standard menus, with File actions for track tabs instead of closing the window on Cmd+W
+function setMenu() {
+  const isMac = process.platform === 'darwin';
+  const send = (action) => mainWindow?.webContents.send('menu', action);
+  const template = [
+    ...(isMac ? [{ role: 'appMenu' }] : []),
+    {
+      label: 'File',
+      submenu: [
+        { label: 'New Track', accelerator: 'CmdOrCtrl+N', click: () => send('new-track') },
+        { label: 'Close Tab', accelerator: 'CmdOrCtrl+W', click: () => send('close-tab') },
+        ...(isMac ? [] : [{ type: 'separator' }, { role: 'quit' }]),
+      ],
+    },
+    { role: 'editMenu' },
+    { role: 'viewMenu' },
+    { role: 'windowMenu' },
+  ];
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+
 function isAppUrl(url) {
   const origin = new URL(url).origin;
   return devServerUrl ? origin === new URL(devServerUrl).origin : origin === appOrigin;
@@ -107,6 +128,7 @@ app.whenReady().then(async () => {
     serveDist();
   }
   setPermissions();
+  setMenu();
   const db = openDatabase(path.join(app.getPath('userData'), 'tourbillon.db'));
   const getWindow = () => mainWindow;
   setupTracks({ db, getWindow });

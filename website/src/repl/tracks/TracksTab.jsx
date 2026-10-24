@@ -1,3 +1,4 @@
+import { PlayIcon } from '@heroicons/react/16/solid';
 import { useStore } from '@nanostores/react';
 import { useEffect, useMemo, useState } from 'react';
 import cx from '@src/cx.mjs';
@@ -7,6 +8,8 @@ import { Textbox } from '../components/panel/SettingsTab.jsx';
 import { confirmDialog } from '../util.mjs';
 import {
   $currentTrack,
+  $openTracks,
+  $playing,
   $tracks,
   $versionsChanged,
   deleteTrack,
@@ -62,8 +65,12 @@ function TitleInput({ track }) {
   );
 }
 
+// a click selects a track, a double click opens it in a tab
 function TrackList({ current }) {
   const list = useStore($tracks);
+  const open = useStore($openTracks);
+  const playing = useStore($playing);
+  const [selected, setSelected] = useState();
   const [search, setSearch] = useState('');
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -76,13 +83,19 @@ function TrackList({ current }) {
         {visible.map((track) => (
           <button
             key={track.id}
+            title="double click to open"
             className={cx(
-              'flex w-full justify-between space-x-4 text-left hover:opacity-50 px-1',
+              'flex w-full items-center justify-between space-x-4 text-left px-1 rounded',
+              track.id === selected ? 'bg-background' : 'hover:opacity-50',
               track.id === current?.id && 'outline outline-1',
             )}
-            onClick={() => openTrack(track.id)}
+            onClick={() => setSelected(track.id)}
+            onDoubleClick={() => openTrack(track.id)}
           >
-            <span className="truncate">{track.title || 'untitled'}</span>
+            <span className={cx('flex items-center space-x-2 truncate', !open.includes(track.id) && 'opacity-60')}>
+              {playing.started && playing.trackId === track.id && <PlayIcon className="w-3 h-3 shrink-0" />}
+              <span className="truncate">{track.title || 'untitled'}</span>
+            </span>
             <span className="text-xs opacity-50 shrink-0">{formatTime(track.updated_at)}</span>
           </button>
         ))}

@@ -13,8 +13,15 @@ contextBridge.exposeInMainWorld('tourbillon', {
     remove: (id) => ipcRenderer.invoke('tracks:delete', id),
     evaluated: (id, code) => ipcRenderer.invoke('tracks:evaluated', id, code),
     versions: (id) => ipcRenderer.invoke('tracks:versions', id),
-    getLast: () => ipcRenderer.invoke('tracks:get-last'),
-    setLast: (id) => ipcRenderer.invoke('tracks:set-last', id),
+    removeIfEmpty: (id) => ipcRenderer.invoke('tracks:delete-if-empty', id),
+    getTabs: () => ipcRenderer.invoke('tracks:get-tabs'),
+    setTabs: (tabs) => ipcRenderer.invoke('tracks:set-tabs', tabs),
+  },
+  // app menu actions, e.g. 'new-track' (Cmd+N) and 'close-tab' (Cmd+W)
+  onMenu(callback) {
+    const listener = (_event, action) => callback(action);
+    ipcRenderer.on('menu', listener);
+    return () => ipcRenderer.removeListener('menu', listener);
   },
   agent: {
     status: () => ipcRenderer.invoke('agent:status'),

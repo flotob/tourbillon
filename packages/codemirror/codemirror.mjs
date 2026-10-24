@@ -368,6 +368,24 @@ export class StrudelMirror {
   setCode(code) {
     this.replaceCode(code, 0, this.editor.state.doc.length);
   }
+  // highlighting and widgets of the last evaluation belong to the evaluated code:
+  // clear them while showing other code, restore them when the evaluated code is shown again
+  clearEvalDecorations() {
+    updateSliderWidgets(this.editor, []);
+    updateWidgets(this.editor, []);
+    updateMiniLocations(this.editor, []);
+  }
+  restoreEvalDecorations() {
+    updateSliderWidgets(
+      this.editor,
+      this.widgets.filter((w) => w.type === 'slider'),
+    );
+    updateWidgets(
+      this.editor,
+      this.widgets.filter((w) => w.type !== 'slider'),
+    );
+    updateMiniLocations(this.editor, this.miniLocations);
+  }
   // replaces the code with a fresh undo history, e.g. when opening another document
   resetCode(code) {
     this.setCode(code);

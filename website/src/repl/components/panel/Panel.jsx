@@ -1,7 +1,7 @@
 import { Bars3Icon, PlayIcon, StopIcon, XMarkIcon } from '@heroicons/react/16/solid';
 import cx from '@src/cx.mjs';
 import { StrudelIcon } from '@src/repl/components/icons/StrudelIcon';
-import { useSettings, setIsZen, setIsPanelOpened, setActiveFooter as setTab } from '../../../settings.mjs';
+import { settingsMap, useSettings, setIsZen, setIsPanelOpened, setActiveFooter as setTab } from '../../../settings.mjs';
 import '../../Repl.css';
 import { useLogger } from '../useLogger';
 import { ConsoleTab } from './ConsoleTab';
@@ -234,9 +234,8 @@ export function RightPanel({ context }) {
 
 const tabNames = {
   ...(DESKTOP && { agent: 'agent', tracks: 'tracks' }),
-  welcome: 'intro',
-  // the desktop app stores code in tracks
-  ...(!DESKTOP && { patterns: 'patterns' }),
+  // the desktop app starts with the agent and stores code in tracks
+  ...(!DESKTOP && { welcome: 'intro', patterns: 'patterns' }),
   sounds: 'sounds',
   reference: 'reference',
   export: 'export',
@@ -245,6 +244,10 @@ const tabNames = {
 };
 if (TAURI) {
   tabNames.files = 'files';
+}
+// e.g. the intro tab, saved as active before the desktop app removed it
+if (DESKTOP && !Object.values(tabNames).includes(settingsMap.get().activeFooter)) {
+  setTab(tabNames.agent);
 }
 
 function PanelNav({ children, className, ...props }) {

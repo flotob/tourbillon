@@ -3,6 +3,9 @@ import Loader from '@src/repl/components/Loader';
 import { BottomPanel, MainPanel, RightPanel } from '@src/repl/components/panel/Panel';
 import UserFacingErrorMessage from '@src/repl/components/UserFacingErrorMessage';
 import { useSettings } from '@src/settings.mjs';
+import { TrackTabs } from '@src/repl/tracks/TrackTabs';
+
+const DESKTOP = typeof window !== 'undefined' && window.tourbillon?.desktop;
 
 // type Props = {
 //  context: replcontext,
@@ -22,7 +25,10 @@ export default function ReplEditor(Props) {
         {/* <MainPanel context={context} isEmbedded={isEmbedded} className="hidden sm:block" /> */}
         <MainPanel context={context} isEmbedded={isEmbedded} />
         <div className="flex overflow-hidden h-full">
-          <Code containerRef={containerRef} editorRef={editorRef} init={init} />
+          <div className="flex flex-col grow min-w-0 overflow-hidden">
+            {DESKTOP && !isZen && <TrackTabs />}
+            <Code containerRef={containerRef} editorRef={editorRef} init={init} />
+          </div>
           {!isZen && panelPosition === 'right' && <RightPanel context={context} />}
         </div>
       </div>

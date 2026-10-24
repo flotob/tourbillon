@@ -1,5 +1,6 @@
 // tracks are the code pages of the desktop app, stored in the main process database.
-// the editor always shows the open track: edits are saved shortly after typing, every evaluation adds a version
+// open tracks are tabs above the editor, which shows the active one: edits are saved shortly after typing,
+// every evaluation adds a version
 import { isolateHistory } from '@codemirror/commands';
 import { nanoid } from 'nanoid';
 import { atom } from 'nanostores';
@@ -11,7 +12,12 @@ const SAVE_DELAY_MS = 800;
 
 // [{ id, title, created_at, updated_at }], most recently changed first
 export const $tracks = atom([]);
+// the active tab
 export const $currentTrack = atom(undefined);
+// track ids of the open tabs, in order
+export const $openTracks = atom([]);
+// the music that plays comes from the track evaluated last, also after switching tabs
+export const $playing = atom({ trackId: undefined, started: false });
 // bumped when the open track gets a new version
 export const $versionsChanged = atom(0);
 
@@ -34,13 +40,22 @@ async function flushSave() {
   }
 }
 
+const saveTabs = () => tracks.setTabs({ open: $openTracks.get(), active: $currentTrack.get()?.id });
+
 // typing or agent edits
-export function codeChanged(code) {
+function codeChanged(code) {
   const track = $currentTrack.get();
   if (!track || code === savedCode) return;
   savedCode = code;
   clearTimeout(pendingSave?.timer);
   pendingSave = { id: track.id, code, timer: setTimeout(flushSave, SAVE_DELAY_MS) };
+}
+
+export function replStateChanged({ code, started }) {
+  codeChanged(code);
+  if (started !== $playing.get().started) {
+    $playing.set({ ...$playing.get(), started });
+  }
 }
 
 export async function evaluated(code) {
@@ -51,22 +66,62 @@ export async function evaluated(code) {
     pendingSave = undefined;
   }
   savedCode = code;
+  $playing.set({ ...$playing.get(), trackId: track.id });
   if (await tracks.evaluated(track.id, code)) {
     $versionsChanged.set($versionsChanged.get() + 1);
   }
   refreshTracks();
 }
 
+// highlighting and widgets only fit the code they were evaluated from
+function showEvalDecorations() {
+  const isEvaluatedCode =
+    $currentTrack.get()?.id === $playing.get().trackId && editor.code === editor.repl.state.activeCode;
+  if (isEvaluatedCode) {
+    editor.restoreEvalDecorations();
+  } else {
+    editor.clearEvalDecorations();
+  }
+}
+
+// shows a track in the editor, opening a tab for it if needed
 export async function openTrack(id) {
+  if ($currentTrack.get()?.id === id) return;
   await flushSave();
   const track = await tracks.get(id);
   if (!track) return;
+  if (!$openTracks.get().includes(id)) {
+    $openTracks.set([...$openTracks.get(), id]);
+  }
   savedCode = track.code;
   $currentTrack.set({ id: track.id, title: track.title });
   // a fresh undo history, so undo cannot bring back code of the previous track
   editor.resetCode(track.code);
-  tracks.setLast(id);
+  showEvalDecorations();
+  saveTabs();
   openTrackChats(id);
+}
+
+// the last tab cannot be closed unless another track can take its place
+export async function closeTab(id = $currentTrack.get()?.id) {
+  const open = $openTracks.get();
+  const index = open.indexOf(id);
+  if (index === -1) return;
+  let rest = open.filter((other) => other !== id);
+  if (!rest.length) {
+    const other = $tracks.get().find((track) => track.id !== id);
+    if (!other) return;
+    rest = [other.id];
+  }
+  $openTracks.set(rest);
+  if ($currentTrack.get()?.id === id) {
+    await openTrack(rest[Math.min(index, rest.length - 1)]);
+  } else {
+    saveTabs();
+  }
+  if (await tracks.removeIfEmpty(id)) {
+    refreshTracks();
+  }
 }
 
 export async function newTrack({ code = '', title = '' } = {}) {
@@ -87,11 +142,17 @@ export async function deleteTrack(id) {
     clearTimeout(pendingSave.timer);
     pendingSave = undefined;
   }
+  const open = $openTracks.get();
+  const index = open.indexOf(id);
+  const rest = open.filter((other) => other !== id);
+  $openTracks.set(rest);
   await tracks.remove(id);
   await refreshTracks();
   if ($currentTrack.get()?.id === id) {
-    const next = $tracks.get()[0];
-    await (next ? openTrack(next.id) : newTrack());
+    const next = rest[Math.min(index, rest.length - 1)] ?? $tracks.get()[0]?.id;
+    await (next ? openTrack(next) : newTrack());
+  } else {
+    saveTabs();
   }
 }
 
@@ -112,12 +173,23 @@ export function loadVersion(code) {
   });
 }
 
-// opens the track used last, or creates the first one
+function handleMenu(action) {
+  if (action === 'new-track') {
+    newTrack();
+  } else if (action === 'close-tab') {
+    closeTab();
+  }
+}
+
+// restores the tabs of the last session, or creates the first track
 export async function initTracks(strudelMirror, firstCode) {
   editor = strudelMirror;
+  window.tourbillon.onMenu(handleMenu);
   await refreshTracks();
-  const lastId = await tracks.getLast();
-  const list = $tracks.get();
-  const id = list.find((track) => track.id === lastId)?.id ?? list[0]?.id;
-  await (id ? openTrack(id) : newTrack({ code: firstCode }));
+  const existing = new Set($tracks.get().map((track) => track.id));
+  const tabs = (await tracks.getTabs()) ?? { open: [] };
+  const open = tabs.open.filter((id) => existing.has(id));
+  $openTracks.set(open);
+  const active = open.includes(tabs.active) ? tabs.active : (open[0] ?? $tracks.get()[0]?.id);
+  await (active ? openTrack(active) : newTrack({ code: firstCode }));
 }
