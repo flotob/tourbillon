@@ -1,3 +1,24 @@
+# tourbillon
+
+A desktop live music coding environment with a built-in agent, based on [Strudel](https://codeberg.org/uzu/strudel).
+Tourbillon is an independent fork and is not affiliated with the Strudel project. See [NOTICE.md](NOTICE.md).
+
+## Running the desktop app
+
+Requires [Node.js](https://nodejs.org/) 22.19 or newer and [pnpm](https://pnpm.io/installation).
+
+```bash
+pnpm i
+pnpm desktop        # dev: astro dev server + electron, with hot reload
+pnpm desktop:prod   # builds the website, then runs electron on website/dist
+```
+
+The Electron shell lives in [desktop/](desktop/).
+
+Everything below is the original Strudel README.
+
+---
+
 # strudel
 
 Live coding patterns on the web
