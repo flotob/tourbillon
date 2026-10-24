@@ -1,5 +1,6 @@
 // runs the pi agent in the main process and talks to the renderer over ipc
 import { app, ipcMain, shell } from 'electron';
+import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -54,6 +55,18 @@ export async function setupAgent({ getWindow, repoDir }) {
     // first start
   }
   const savePrefs = () => fs.writeFileSync(prefsPath, JSON.stringify(prefs, null, 2));
+
+  // sign in with chatgpt registers this installation with openai under a stable id
+  const loginOptions = {
+    agentName: 'Tourbillon',
+    getDeviceId() {
+      if (!prefs.deviceId) {
+        prefs.deviceId = randomUUID();
+        savePrefs();
+      }
+      return prefs.deviceId;
+    },
+  };
 
   const runtime = await ModelRuntime.create({
     authPath: path.join(agentDir, 'auth.json'),
@@ -214,31 +227,41 @@ export async function setupAgent({ getWindow, repoDir }) {
     const controller = new AbortController();
     login = { controller, prompt: undefined };
     try {
-      await runtime.login(PROVIDER, 'oauth', {
-        signal: controller.signal,
-        notify(authEvent) {
-          if (authEvent.type === 'auth_url') {
-            shell.openExternal(authEvent.url);
-            send({ type: 'login', stage: 'browser', url: authEvent.url });
-          } else if (authEvent.type === 'progress' || authEvent.type === 'info') {
-            send({ type: 'login', stage: 'progress', message: authEvent.message });
-          }
+      await runtime.login(
+        PROVIDER,
+        'oauth',
+        {
+          signal: controller.signal,
+          notify(authEvent) {
+            if (authEvent.type === 'auth_url') {
+              shell.openExternal(authEvent.url);
+              send({ type: 'login', stage: 'browser', url: authEvent.url });
+            } else if (authEvent.type === 'progress' || authEvent.type === 'info') {
+              send({ type: 'login', stage: 'progress', message: authEvent.message });
+            }
+          },
+          prompt(authPrompt) {
+            return new Promise((resolve, reject) => {
+              login.prompt = { resolve, reject };
+              send({
+                type: 'login',
+                stage: 'prompt',
+                message: authPrompt.message,
+                placeholder: authPrompt.placeholder,
+              });
+              authPrompt.signal?.addEventListener(
+                'abort',
+                () => {
+                  login.prompt = undefined;
+                  reject(new Error('aborted'));
+                },
+                { once: true },
+              );
+            });
+          },
         },
-        prompt(authPrompt) {
-          return new Promise((resolve, reject) => {
-            login.prompt = { resolve, reject };
-            send({ type: 'login', stage: 'prompt', message: authPrompt.message, placeholder: authPrompt.placeholder });
-            authPrompt.signal?.addEventListener(
-              'abort',
-              () => {
-                login.prompt = undefined;
-                reject(new Error('aborted'));
-              },
-              { once: true },
-            );
-          });
-        },
-      });
+        loginOptions,
+      );
       disposeSession();
       send({ type: 'login', stage: 'done' });
     } catch (err) {
