@@ -1,5 +1,5 @@
 import { closeBrackets } from '@codemirror/autocomplete';
-import { history, indentWithTab } from '@codemirror/commands';
+import { history, indentWithTab, toggleComment } from '@codemirror/commands';
 import { javascript, javascriptLanguage } from '@codemirror/lang-javascript';
 import { bracketMatching, defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language';
 import { Compartment, EditorState, Prec } from '@codemirror/state';
@@ -101,6 +101,19 @@ export function initEditor({ initialCode = '', onChange, onEvaluate, onStop, roo
       syntaxHighlighting(defaultHighlightStyle),
       EditorView.updateListener.of((v) => onChange(v)),
       drawSelection({ cursorBlinkRate: 0 }),
+      // Cmd+Shift+7 is Cmd+/ (toggle comment) on German keyboards, but keymaps do not match it,
+      // so the physical key is checked instead
+      Prec.highest(
+        EditorView.domEventHandlers({
+          keydown(event, view) {
+            const mod = /Mac/.test(navigator.platform) ? event.metaKey : event.ctrlKey;
+            if (mod && event.shiftKey && !event.altKey && event.code === 'Digit7') {
+              event.preventDefault();
+              return toggleComment(view);
+            }
+          },
+        }),
+      ),
       Prec.highest(
         keymap.of([
           {
