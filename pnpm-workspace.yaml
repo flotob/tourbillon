@@ -3,6 +3,7 @@ packages:
   - examples/*
   - tools/dbpatch
   - website/
+  - desktop
 
 catalog:
   '@codemirror/autocomplete': ^6.18.4
@@ -12,6 +13,9 @@ catalog:
   '@codemirror/search': ^6.5.8
   '@codemirror/state': ^6.5.1
   '@codemirror/view': ^6.36.2
+
+onlyBuiltDependencies:
+  - electron
 
 ignoredBuiltDependencies:
   - '@serialport/bindings-cpp'

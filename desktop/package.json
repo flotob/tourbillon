@@ -1,0 +1,16 @@
+{
+  "name": "@tourbillon/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Tourbillon desktop app: Electron shell around the Strudel REPL",
+  "type": "module",
+  "main": "main.mjs",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "start": "electron ."
+  },
+  "license": "AGPL-3.0-or-later",
+  "devDependencies": {
+    "electron": "^45.0.0"
+  }
+}
