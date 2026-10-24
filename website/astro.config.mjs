@@ -59,6 +59,8 @@ const options = {
 
 // https://astro.build/config
 export default defineConfig({
+  // the toolbar overlays the editor in dev mode
+  devToolbar: { enabled: false },
   integrations: [
     react(),
     mdx(options),
