@@ -25,8 +25,9 @@ agent edit.
 
 ### Tracks and data
 
-A track is one code page. Open tracks are tabs above the editor (Cmd+N opens a new one, Cmd+W closes one, a double
-click in the tracks list opens one), and the tab whose code is playing shows a play icon. Edits are saved as you type,
+A track is one code page. Open tracks are tabs above the editor: the app starts with one new empty tab, Cmd+N opens
+another, Cmd+W closes one, a double click on a tab renames it, and a double click in the tracks list opens a track.
+The tab whose code is playing shows a play icon. Edits are saved as you type,
 and every evaluation (Ctrl+Enter) keeps a version in the track's history. Agent chats belong to a track. Everything is stored in one SQLite
 file, `~/Library/Application Support/Tourbillon/tourbillon.db` on macOS ([desktop/db.mjs](desktop/db.mjs)), so copying
 that file backs up all tracks, versions and chats.

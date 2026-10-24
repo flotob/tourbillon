@@ -8,6 +8,8 @@ import { Textbox } from '../components/panel/SettingsTab.jsx';
 import { confirmDialog } from '../util.mjs';
 import {
   $currentTrack,
+  $editorCode,
+  $loadedVersion,
   $openTracks,
   $playing,
   $tracks,
@@ -106,12 +108,20 @@ function TrackList({ current }) {
 
 function History({ current }) {
   const changed = useStore($versionsChanged);
+  const editorCode = useStore($editorCode);
+  const loaded = useStore($loadedVersion);
+  const playing = useStore($playing);
   const [versions, setVersions] = useState([]);
   useEffect(() => {
     if (current) {
       tracks.versions(current.id).then(setVersions);
     }
   }, [current?.id, changed]);
+  // the same code can be in several versions: prefer the one loaded last, else the newest
+  const find = (code, preferred) =>
+    versions.find((v) => v.id === preferred && v.code === code)?.id ?? versions.find((v) => v.code === code)?.id;
+  const shownId = find(editorCode, loaded);
+  const playingId = playing.started && playing.trackId === current.id ? find(playing.code, shownId) : undefined;
   if (!versions.length) {
     return (
       <div className="p-2 opacity-50">Every time you evaluate this track (Ctrl+Enter), the code is kept here.</div>
@@ -119,15 +129,27 @@ function History({ current }) {
   }
   return (
     <div className="overflow-auto p-2 space-y-1">
+      {!shownId && (
+        <div className="px-1 pb-1 text-xs opacity-50">
+          The editor has changes that are not in the history yet. Evaluating (Ctrl+Enter) adds them.
+        </div>
+      )}
       {versions.map((version, i) => (
         <button
           key={version.id}
           title="Put this version in the editor (Cmd+Z goes back)"
-          className="flex w-full space-x-4 text-left hover:opacity-50 px-1"
-          onClick={() => loadVersion(version.code)}
+          className={cx(
+            'flex w-full items-center space-x-4 text-left px-1 rounded',
+            version.id === shownId ? 'bg-background' : 'hover:opacity-50',
+          )}
+          onClick={() => loadVersion(version)}
         >
-          <span className="text-xs opacity-50 shrink-0">{formatTime(version.created_at)}</span>
-          <span className="truncate text-xs">{describeChange(version.code, versions[i + 1]?.code)}</span>
+          <span className="flex items-center space-x-1 text-xs opacity-50 shrink-0">
+            <PlayIcon className={cx('w-3 h-3', version.id !== playingId && 'invisible')} />
+            <span>{formatTime(version.created_at)}</span>
+          </span>
+          <span className="grow truncate text-xs">{describeChange(version.code, versions[i + 1]?.code)}</span>
+          {version.id === shownId && <span className="text-xs opacity-50 shrink-0">in editor</span>}
         </button>
       ))}
     </div>

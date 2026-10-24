@@ -65,13 +65,3 @@ export function transaction(db, fn) {
     throw err;
   }
 }
-
-export function getState(db, key) {
-  return db.prepare('select value from app_state where key = ?').get(key)?.value;
-}
-
-export function setState(db, key, value) {
-  db.prepare(
-    'insert into app_state (key, value) values (?, ?) on conflict(key) do update set value = excluded.value',
-  ).run(key, value);
-}

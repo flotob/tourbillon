@@ -14,8 +14,7 @@ contextBridge.exposeInMainWorld('tourbillon', {
     evaluated: (id, code) => ipcRenderer.invoke('tracks:evaluated', id, code),
     versions: (id) => ipcRenderer.invoke('tracks:versions', id),
     removeIfEmpty: (id) => ipcRenderer.invoke('tracks:delete-if-empty', id),
-    getTabs: () => ipcRenderer.invoke('tracks:get-tabs'),
-    setTabs: (tabs) => ipcRenderer.invoke('tracks:set-tabs', tabs),
+    removeAllEmpty: () => ipcRenderer.invoke('tracks:delete-all-empty'),
   },
   // app menu actions, e.g. 'new-track' (Cmd+N) and 'close-tab' (Cmd+W)
   onMenu(callback) {

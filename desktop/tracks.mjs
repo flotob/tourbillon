@@ -1,6 +1,6 @@
 // tracks are the code pages; every evaluation of a track is kept as a version
 import { ipcMain } from 'electron';
-import { getState, setState, transaction } from './db.mjs';
+import { transaction } from './db.mjs';
 
 const MAX_VERSIONS_LISTED = 500;
 
@@ -23,11 +23,11 @@ export function setupTracks({ db, getWindow }) {
   const rename = db.prepare('update tracks set title = ?, updated_at = ? where id = ?');
   const remove = db.prepare('delete from tracks where id = ?');
   // tracks opened with + and closed without content leave nothing behind
-  const removeIfEmpty = db.prepare(
-    `delete from tracks where id = ? and trim(code) = '' and title = ''
-     and not exists (select 1 from track_versions where track_id = tracks.id)
-     and not exists (select 1 from chats where track_id = tracks.id)`,
-  );
+  const empty = `trim(code) = '' and title = ''
+    and not exists (select 1 from track_versions where track_id = tracks.id)
+    and not exists (select 1 from chats where track_id = tracks.id)`;
+  const removeIfEmpty = db.prepare(`delete from tracks where id = ? and ${empty}`);
+  const removeAllEmpty = db.prepare(`delete from tracks where ${empty}`);
   const latestVersion = db.prepare('select code from track_versions where track_id = ? order by id desc limit 1');
   const insertVersion = db.prepare('insert into track_versions (track_id, code, created_at) values (?, ?, ?)');
   const versions = db.prepare(
@@ -50,6 +50,9 @@ export function setupTracks({ db, getWindow }) {
   });
   // returns true when the track was empty and is gone
   handle('tracks:delete-if-empty', (id) => removeIfEmpty.run(id).changes > 0);
+  handle('tracks:delete-all-empty', () => {
+    removeAllEmpty.run();
+  });
   // called on evaluate: the track keeps the code, and a version is added unless it equals the last one
   handle('tracks:evaluated', (id, code) =>
     transaction(db, () => {
@@ -63,7 +66,4 @@ export function setupTracks({ db, getWindow }) {
     }),
   );
   handle('tracks:versions', (id) => versions.all(id));
-  // the tabs above the editor: { open: [track ids], active: track id }
-  handle('tracks:get-tabs', () => JSON.parse(getState(db, 'tabs') ?? 'null'));
-  handle('tracks:set-tabs', (tabs) => setState(db, 'tabs', JSON.stringify(tabs)));
 }

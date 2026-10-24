@@ -16,8 +16,12 @@ export const $tracks = atom([]);
 export const $currentTrack = atom(undefined);
 // track ids of the open tabs, in order
 export const $openTracks = atom([]);
-// the music that plays comes from the track evaluated last, also after switching tabs
-export const $playing = atom({ trackId: undefined, started: false });
+// the music that plays comes from the track and code evaluated last, also after switching tabs
+export const $playing = atom({ trackId: undefined, code: undefined, started: false });
+// what the editor shows, to find it in the history
+export const $editorCode = atom('');
+// the history version put in the editor last
+export const $loadedVersion = atom(undefined);
 // bumped when the open track gets a new version
 export const $versionsChanged = atom(0);
 
@@ -40,8 +44,6 @@ async function flushSave() {
   }
 }
 
-const saveTabs = () => tracks.setTabs({ open: $openTracks.get(), active: $currentTrack.get()?.id });
-
 // typing or agent edits
 function codeChanged(code) {
   const track = $currentTrack.get();
@@ -53,6 +55,9 @@ function codeChanged(code) {
 
 export function replStateChanged({ code, started }) {
   codeChanged(code);
+  if (code !== $editorCode.get()) {
+    $editorCode.set(code);
+  }
   if (started !== $playing.get().started) {
     $playing.set({ ...$playing.get(), started });
   }
@@ -66,7 +71,7 @@ export async function evaluated(code) {
     pendingSave = undefined;
   }
   savedCode = code;
-  $playing.set({ ...$playing.get(), trackId: track.id });
+  $playing.set({ ...$playing.get(), trackId: track.id, code });
   if (await tracks.evaluated(track.id, code)) {
     $versionsChanged.set($versionsChanged.get() + 1);
   }
@@ -95,29 +100,32 @@ export async function openTrack(id) {
   }
   savedCode = track.code;
   $currentTrack.set({ id: track.id, title: track.title });
+  $loadedVersion.set(undefined);
   // a fresh undo history, so undo cannot bring back code of the previous track
   editor.resetCode(track.code);
   showEvalDecorations();
-  saveTabs();
   openTrackChats(id);
 }
 
-// the last tab cannot be closed unless another track can take its place
+const isEmpty = () => !editor.code.trim() && !$currentTrack.get()?.title;
+
+// closing the last tab leaves a new empty one
 export async function closeTab(id = $currentTrack.get()?.id) {
   const open = $openTracks.get();
   const index = open.indexOf(id);
   if (index === -1) return;
-  let rest = open.filter((other) => other !== id);
-  if (!rest.length) {
-    const other = $tracks.get().find((track) => track.id !== id);
-    if (!other) return;
-    rest = [other.id];
-  }
-  $openTracks.set(rest);
+  const rest = open.filter((other) => other !== id);
   if ($currentTrack.get()?.id === id) {
-    await openTrack(rest[Math.min(index, rest.length - 1)]);
+    if (!rest.length && isEmpty()) return;
+    if (rest.length) {
+      $openTracks.set(rest);
+      await openTrack(rest[Math.min(index, rest.length - 1)]);
+    } else {
+      await newTrack();
+      $openTracks.set($openTracks.get().filter((other) => other !== id));
+    }
   } else {
-    saveTabs();
+    $openTracks.set(rest);
   }
   if (await tracks.removeIfEmpty(id)) {
     refreshTracks();
@@ -149,10 +157,8 @@ export async function deleteTrack(id) {
   await tracks.remove(id);
   await refreshTracks();
   if ($currentTrack.get()?.id === id) {
-    const next = rest[Math.min(index, rest.length - 1)] ?? $tracks.get()[0]?.id;
+    const next = rest[Math.min(index, rest.length - 1)];
     await (next ? openTrack(next) : newTrack());
-  } else {
-    saveTabs();
   }
 }
 
@@ -165,10 +171,11 @@ export async function renameTrack(id, title) {
 }
 
 // puts an earlier version in the editor as one undoable change, without evaluating it
-export function loadVersion(code) {
+export function loadVersion(version) {
   const view = editor.editor;
+  $loadedVersion.set(version.id);
   view.dispatch({
-    changes: { from: 0, to: view.state.doc.length, insert: code },
+    changes: { from: 0, to: view.state.doc.length, insert: version.code },
     annotations: isolateHistory.of('full'),
   });
 }
@@ -181,15 +188,10 @@ function handleMenu(action) {
   }
 }
 
-// restores the tabs of the last session, or creates the first track
-export async function initTracks(strudelMirror, firstCode) {
+// the app starts with one new empty tab; empty tracks left from earlier sessions are removed
+export async function initTracks(strudelMirror) {
   editor = strudelMirror;
   window.tourbillon.onMenu(handleMenu);
-  await refreshTracks();
-  const existing = new Set($tracks.get().map((track) => track.id));
-  const tabs = (await tracks.getTabs()) ?? { open: [] };
-  const open = tabs.open.filter((id) => existing.has(id));
-  $openTracks.set(open);
-  const active = open.includes(tabs.active) ? tabs.active : (open[0] ?? $tracks.get()[0]?.id);
-  await (active ? openTrack(active) : newTrack({ code: firstCode }));
+  await tracks.removeAllEmpty();
+  await newTrack();
 }

@@ -1,11 +1,54 @@
 import { PlayIcon, PlusIcon, XMarkIcon } from '@heroicons/react/16/solid';
 import { useStore } from '@nanostores/react';
+import { useRef, useState } from 'react';
 import cx from '@src/cx.mjs';
 import { useSettings } from '../../settings.mjs';
-import { $currentTrack, $openTracks, $playing, $tracks, closeTab, newTrack, openTrack } from './tracksStore.mjs';
+import {
+  $currentTrack,
+  $openTracks,
+  $playing,
+  $tracks,
+  closeTab,
+  newTrack,
+  openTrack,
+  renameTrack,
+} from './tracksStore.mjs';
 
-// tabs of the open tracks above the editor; the one whose code is playing shows a play icon
+// Enter or leaving the field saves, Escape cancels
+function TitleField({ id, title, onDone }) {
+  const [value, setValue] = useState(title);
+  // removing the field can fire blur after Escape, which must not save
+  const finished = useRef(false);
+  const finish = (save) => {
+    if (finished.current) return;
+    finished.current = true;
+    if (save && value.trim() !== title) {
+      renameTrack(id, value.trim());
+    }
+    onDone();
+  };
+  return (
+    <input
+      autoFocus
+      onFocus={(e) => e.target.select()}
+      className="w-36 h-6 px-1 py-0 bg-background text-foreground text-sm border border-muted rounded focus:ring-0 focus:border-foreground"
+      placeholder="untitled"
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      onClick={(e) => e.stopPropagation()}
+      onBlur={() => finish(true)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') finish(true);
+        if (e.key === 'Escape') finish(false);
+      }}
+    />
+  );
+}
+
+// tabs of the open tracks above the editor; the one whose code is playing shows a play icon.
+// a double click on a tab renames the track
 export function TrackTabs() {
+  const [renaming, setRenaming] = useState();
   const open = useStore($openTracks);
   const current = useStore($currentTrack);
   const playing = useStore($playing);
@@ -23,6 +66,7 @@ export function TrackTabs() {
             key={id}
             title={isPlaying ? 'playing' : undefined}
             onClick={() => openTrack(id)}
+            onDoubleClick={() => setRenaming(id)}
             // middle click closes, as in a browser
             onAuxClick={(e) => e.button === 1 && closeTab(id)}
             className={cx(
@@ -31,7 +75,11 @@ export function TrackTabs() {
             )}
           >
             {isPlaying && <PlayIcon className="w-3 h-3 shrink-0 animate-pulse" />}
-            <span className="truncate">{titles.get(id) || 'untitled'}</span>
+            {renaming === id ? (
+              <TitleField id={id} title={titles.get(id) ?? ''} onDone={() => setRenaming(undefined)} />
+            ) : (
+              <span className="truncate">{titles.get(id) || 'untitled'}</span>
+            )}
             <button
               title="close tab (Cmd+W)"
               className={cx(

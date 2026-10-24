@@ -152,7 +152,7 @@ export function useReplContext() {
     window.debugAudiograph = debugAudiograph;
 
     if (DESKTOP) {
-      initTracks(editor, defaultCode).then(() =>
+      initTracks(editor).then(() =>
         logger(`Welcome to Tourbillon! Press play or hit ctrl+enter to run your track.`, 'highlight'),
       );
       editorRef.current = editor;
