@@ -5,10 +5,12 @@ import { useSettings } from '../../settings.mjs';
 import {
   $agent,
   agent,
+  deleteChat,
   initAgent,
   login,
   logout,
   newChat,
+  openChat,
   sendPrompt,
   setModel,
   setThinkingLevel,
@@ -164,7 +166,7 @@ export function AgentTab() {
   const { fontFamily } = useSettings();
   const [input, setInput] = useState('');
   const scrollRef = useRef();
-  const { status, messages, busy } = state;
+  const { status, messages, busy, chats, chatId } = state;
 
   useEffect(() => {
     initAgent();
@@ -208,12 +210,29 @@ export function AgentTab() {
           onChange={setThinkingLevel}
         />
         <div className="grow" />
-        <button className="text-xs hover:opacity-50" onClick={newChat}>
-          new chat
-        </button>
         <button className="text-xs hover:opacity-50" onClick={logout}>
           sign out
         </button>
+      </div>
+      <div className="flex items-center space-x-2 px-2 py-1 border-b border-muted">
+        <Select
+          title="chats about this track"
+          value={chatId ?? ''}
+          options={[
+            ...(chatId ? [] : [{ value: '', label: 'new chat' }]),
+            ...chats.map((chat) => ({ value: chat.id, label: chat.title || 'untitled chat' })),
+          ]}
+          onChange={(id) => id && openChat(id)}
+        />
+        <div className="grow" />
+        <button className="text-xs hover:opacity-50" onClick={newChat}>
+          new chat
+        </button>
+        {chatId && (
+          <button className="text-xs hover:opacity-50" onClick={() => deleteChat(chatId)}>
+            delete chat
+          </button>
+        )}
       </div>
       <div ref={scrollRef} className="grow overflow-auto p-2 space-y-3">
         {!messages.length && (

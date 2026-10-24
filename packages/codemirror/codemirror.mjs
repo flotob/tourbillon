@@ -1,5 +1,5 @@
 import { closeBrackets } from '@codemirror/autocomplete';
-import { indentWithTab } from '@codemirror/commands';
+import { history, indentWithTab } from '@codemirror/commands';
 import { javascript, javascriptLanguage } from '@codemirror/lang-javascript';
 import { bracketMatching, defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language';
 import { Compartment, EditorState, Prec } from '@codemirror/state';
@@ -16,7 +16,7 @@ import { registerControl, repl } from '@strudel/core';
 import { cleanupDraw, Drawer } from '@strudel/draw';
 
 import { isAutoCompletionEnabled } from './autocomplete.mjs';
-import { basicSetup } from './basicSetup.mjs';
+import { basicSetup, historyCompartment } from './basicSetup.mjs';
 import { flash, isFlashEnabled } from './flash.mjs';
 import { highlightMiniLocations, isPatternHighlightingEnabled, updateMiniLocations } from './highlight.mjs';
 import { keybindings } from './keybindings.mjs';
@@ -367,6 +367,12 @@ export class StrudelMirror {
   }
   setCode(code) {
     this.replaceCode(code, 0, this.editor.state.doc.length);
+  }
+  // replaces the code with a fresh undo history, e.g. when opening another document
+  resetCode(code) {
+    this.setCode(code);
+    this.editor.dispatch({ effects: historyCompartment.reconfigure([]) });
+    this.editor.dispatch({ effects: historyCompartment.reconfigure(history()) });
   }
   clear() {
     this.onStartRepl && document.removeEventListener('start-repl', this.onStartRepl);

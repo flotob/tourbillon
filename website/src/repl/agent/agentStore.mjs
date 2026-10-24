@@ -5,7 +5,15 @@ import { runEditorTool } from './editorTools.mjs';
 export const agent = typeof window !== 'undefined' ? window.tourbillon?.agent : undefined;
 
 // messages: { role: 'user' | 'assistant' | 'tool' | 'error', ... }
-export const $agent = atom({ status: undefined, messages: [], busy: false, login: undefined });
+// chats: the stored chats of the open track, chatId: the one shown (undefined for a new chat)
+export const $agent = atom({
+  status: undefined,
+  messages: [],
+  busy: false,
+  login: undefined,
+  chats: [],
+  chatId: undefined,
+});
 
 const update = (changes) => $agent.set({ ...$agent.get(), ...changes });
 
@@ -56,6 +64,8 @@ function handleEvent(event) {
       ]);
     case 'error':
       return updateMessages((m) => [...m, { role: 'error', text: event.message }]);
+    case 'chats':
+      return update({ chatId: event.chatId, chats: event.chats });
     case 'login':
       if (event.stage === 'done' || event.stage === 'failed') {
         update({ login: event.stage === 'failed' ? { stage: 'failed', message: event.message } : undefined });
@@ -84,11 +94,27 @@ export function sendPrompt(text) {
   return agent.prompt(text);
 }
 
+// a chat view is { chatId, chats, messages }; switching aborts a running agent in the main process
+const showChat = (view) => update({ ...view, busy: false });
+
+export async function openTrackChats(trackId) {
+  initAgent();
+  showChat(await agent.openTrack(trackId));
+}
+
+export async function openChat(chatId) {
+  showChat(await agent.openChat(chatId));
+}
+
 export async function newChat() {
-  if ($agent.get().busy) {
-    await agent.abort();
+  showChat(await agent.newChat());
+}
+
+export async function deleteChat(chatId) {
+  update(await agent.deleteChat(chatId));
+  if (!$agent.get().chatId) {
+    update({ messages: [] });
   }
-  update({ messages: [], status: await agent.reset() });
 }
 
 export async function login() {

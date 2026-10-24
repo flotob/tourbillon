@@ -11,6 +11,7 @@ import {
   SessionManager,
   SettingsManager,
 } from '@earendil-works/pi-coding-agent';
+import { createChatStore, entriesToMessages } from './chats.mjs';
 import { loadKnowledge } from './knowledge.mjs';
 import { systemPrompt } from './prompt.mjs';
 import { createTools } from './tools.mjs';
@@ -44,7 +45,7 @@ function resultText(result) {
     .join('\n');
 }
 
-export async function setupAgent({ getWindow, repoDir }) {
+export async function setupAgent({ getWindow, repoDir, db }) {
   const agentDir = path.join(app.getPath('userData'), 'agent');
   fs.mkdirSync(agentDir, { recursive: true });
   const prefsPath = path.join(agentDir, 'prefs.json');
@@ -112,8 +113,13 @@ export async function setupAgent({ getWindow, repoDir }) {
   });
 
   const tools = createTools({ callRenderer, knowledge });
+  const chats = createChatStore(db);
   let session;
+  let sessionManager;
   let unsubscribe;
+  // the track whose code the agent works on, and the chat about it
+  let trackId;
+  let chatId;
 
   const isLoggedIn = () => !!scriptedModel || runtime.hasConfiguredAuth(PROVIDER);
 
@@ -135,7 +141,16 @@ export async function setupAgent({ getWindow, repoDir }) {
     return models.find((model) => model.id === prefs.model);
   }
 
+  function persist() {
+    if (chatId && sessionManager) {
+      chats.sync(chatId, sessionManager);
+    }
+  }
+
   function forward(event) {
+    if (event.type === 'message_end' || event.type === 'agent_settled') {
+      persist();
+    }
     switch (event.type) {
       case 'agent_start':
         return send({ type: 'busy', busy: true });
@@ -183,6 +198,9 @@ export async function setupAgent({ getWindow, repoDir }) {
     if (session) {
       return session;
     }
+    sessionManager = chatId
+      ? SessionManager.inMemory(agentDir, undefined, chats.load(chatId))
+      : SessionManager.inMemory(agentDir);
     ({ session } = await createAgentSession({
       cwd: agentDir,
       agentDir,
@@ -191,7 +209,7 @@ export async function setupAgent({ getWindow, repoDir }) {
       thinkingLevel: prefs.thinkingLevel,
       resourceLoader,
       settingsManager: SettingsManager.inMemory(),
-      sessionManager: SessionManager.inMemory(agentDir),
+      sessionManager,
       noTools: 'builtin',
       customTools: tools,
     }));
@@ -200,9 +218,24 @@ export async function setupAgent({ getWindow, repoDir }) {
   }
 
   function disposeSession() {
+    persist();
     unsubscribe?.();
     session?.dispose();
     session = undefined;
+    sessionManager = undefined;
+  }
+
+  async function switchChat(id) {
+    if (session?.isStreaming) {
+      await session.abort();
+    }
+    disposeSession();
+    chatId = id;
+    return {
+      chatId,
+      chats: chats.list(trackId),
+      messages: chatId ? entriesToMessages(chats.load(chatId)) : [],
+    };
   }
 
   async function status() {
@@ -305,6 +338,10 @@ export async function setupAgent({ getWindow, repoDir }) {
   ipcMain.handle('agent:prompt', async (event, text) => {
     if (!fromWindow(event)) return;
     try {
+      if (!chatId) {
+        chatId = chats.create(trackId, text.length > 60 ? text.slice(0, 60) + '…' : text);
+        send({ type: 'chats', chatId, chats: chats.list(trackId) });
+      }
       const current = await ensureSession();
       if (current.isStreaming) {
         // typed while the agent works: handle it once the current step is done
@@ -319,9 +356,24 @@ export async function setupAgent({ getWindow, repoDir }) {
 
   ipcMain.handle('agent:abort', (event) => fromWindow(event) && session?.abort());
 
-  ipcMain.handle('agent:reset', (event) => {
+  // the renderer opens a track: show its latest chat
+  ipcMain.handle('agent:open-track', async (event, id) => {
     if (!fromWindow(event)) return;
-    disposeSession();
-    return status();
+    trackId = id;
+    return switchChat(chats.latest(trackId)?.id);
+  });
+
+  ipcMain.handle('agent:open-chat', (event, id) => fromWindow(event) && switchChat(id));
+
+  // a new chat is stored once its first prompt is sent
+  ipcMain.handle('agent:new-chat', (event) => fromWindow(event) && switchChat(undefined));
+
+  ipcMain.handle('agent:delete-chat', async (event, id) => {
+    if (!fromWindow(event)) return;
+    if (id === chatId) {
+      await switchChat(undefined);
+    }
+    chats.remove(id);
+    return { chatId, chats: chats.list(trackId) };
   });
 }

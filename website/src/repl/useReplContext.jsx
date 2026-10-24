@@ -39,6 +39,7 @@ import './Repl.css';
 import { setInterval, clearInterval } from 'worker-timers';
 import { getMetadata } from '../metadata_parser';
 import { debugAudiograph } from './audiograph';
+import { codeChanged, evaluated, initTracks } from './tracks/tracksStore.mjs';
 
 const { latestCode, maxPolyphony, audioDeviceName, multiChannelOrbits } = settingsMap.get();
 let modulesLoading, presets, drawContext, clearCanvas, audioReady;
@@ -64,6 +65,9 @@ async function getModule(name) {
 }
 
 const initialCode = `// LOADING`;
+// the desktop app keeps code in tracks instead of the url and local storage
+const DESKTOP = typeof window !== 'undefined' && window.tourbillon?.desktop;
+const defaultCode = '$: s("[bd <hh oh>]*2").bank("tr909").dec(.4)';
 
 export function useReplContext() {
   const { isSyncEnabled, audioEngineTarget, prebakeScript, includePrebakeScriptInShare } = useSettings();
@@ -95,6 +99,9 @@ export function useReplContext() {
       },
       onUpdateState: (state) => {
         setReplState({ ...state });
+        if (DESKTOP) {
+          codeChanged(state.code);
+        }
       },
       onToggle: (playing) => {
         if (!playing) {
@@ -104,6 +111,11 @@ export function useReplContext() {
       beforeEval: () => audioReady,
       afterEval: (all) => {
         const { code } = all;
+        if (DESKTOP) {
+          setDocumentTitle(code);
+          evaluated(code);
+          return;
+        }
         //post to iframe parent (like Udels) if it exists...
         window.parent?.postMessage(code);
 
@@ -139,6 +151,14 @@ export function useReplContext() {
     window.strudelMirror = editor;
     window.debugAudiograph = debugAudiograph;
 
+    if (DESKTOP) {
+      initTracks(editor, defaultCode).then(() =>
+        logger(`Welcome to Tourbillon! Press play or hit ctrl+enter to run your track.`, 'highlight'),
+      );
+      editorRef.current = editor;
+      return;
+    }
+
     // init settings
     initCode().then(async (decoded) => {
       let code, msg;
@@ -151,7 +171,7 @@ export function useReplContext() {
       } else {
         /* const { code: randomTune, name } = await getRandomTune();
         code = randomTune; */
-        code = '$: s("[bd <hh oh>]*2").bank("tr909").dec(.4)';
+        code = defaultCode;
         msg = `Default code has been loaded`;
       }
       editor.setCode(code);

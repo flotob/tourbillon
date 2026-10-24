@@ -9,6 +9,10 @@ import {
 import { defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { closeBracketsKeymap } from '@codemirror/autocomplete';
+import { Compartment } from '@codemirror/state';
+
+// reconfiguring this compartment clears the undo history
+export const historyCompartment = new Compartment();
 
 // Taken + slightly modified from https://github.com/codemirror/basic-setup/blob/main/src/codemirror.ts
 
@@ -16,7 +20,7 @@ export const basicSetup = (() => [
   //   lineNumbers(),
   //   highlightActiveLineGutter(),
   highlightSpecialChars(),
-  history(),
+  historyCompartment.of(history()),
   // foldGutter(),
   // drawSelection(),
   dropCursor(),

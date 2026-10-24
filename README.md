@@ -23,11 +23,19 @@ credentials are stored in the app's data folder (`~/Library/Application Support/
 the repo. The agent writes into the editor but never evaluates: press Ctrl+Enter to hear its changes, Cmd+Z undoes an
 agent edit.
 
+### Tracks and data
+
+A track is one code page. The editor always shows the open track: edits are saved as you type, and every evaluation
+(Ctrl+Enter) keeps a version in the track's history. Agent chats belong to a track. Everything is stored in one SQLite
+file, `~/Library/Application Support/Tourbillon/tourbillon.db` on macOS ([desktop/db.mjs](desktop/db.mjs)), so copying
+that file backs up all tracks, versions and chats.
+
 For development:
 
 - `TOURBILLON_AGENT_SCRIPT=scripts/agent-smoke.mjs pnpm desktop` replaces the model with a scripted one that runs every
   tool once, no account needed.
 - `TOURBILLON_USER_DATA=/some/dir pnpm desktop` runs with a separate profile.
+- `TOURBILLON_DEV_PORT=4400 pnpm desktop` runs a second dev instance next to the first.
 
 Everything below is the original Strudel README.
 

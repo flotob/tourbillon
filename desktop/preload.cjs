@@ -4,6 +4,18 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('tourbillon', {
   desktop: true,
   platform: process.platform,
+  tracks: {
+    list: () => ipcRenderer.invoke('tracks:list'),
+    get: (id) => ipcRenderer.invoke('tracks:get', id),
+    create: (track) => ipcRenderer.invoke('tracks:create', track),
+    save: (id, code) => ipcRenderer.invoke('tracks:save', id, code),
+    rename: (id, title) => ipcRenderer.invoke('tracks:rename', id, title),
+    remove: (id) => ipcRenderer.invoke('tracks:delete', id),
+    evaluated: (id, code) => ipcRenderer.invoke('tracks:evaluated', id, code),
+    versions: (id) => ipcRenderer.invoke('tracks:versions', id),
+    getLast: () => ipcRenderer.invoke('tracks:get-last'),
+    setLast: (id) => ipcRenderer.invoke('tracks:set-last', id),
+  },
   agent: {
     status: () => ipcRenderer.invoke('agent:status'),
     login: () => ipcRenderer.invoke('agent:login'),
@@ -14,7 +26,11 @@ contextBridge.exposeInMainWorld('tourbillon', {
     setThinkingLevel: (level) => ipcRenderer.invoke('agent:set-thinking', level),
     prompt: (text) => ipcRenderer.invoke('agent:prompt', text),
     abort: () => ipcRenderer.invoke('agent:abort'),
-    reset: () => ipcRenderer.invoke('agent:reset'),
+    // chats belong to the open track; these return { chatId, chats, messages }
+    openTrack: (trackId) => ipcRenderer.invoke('agent:open-track', trackId),
+    openChat: (chatId) => ipcRenderer.invoke('agent:open-chat', chatId),
+    newChat: () => ipcRenderer.invoke('agent:new-chat'),
+    deleteChat: (chatId) => ipcRenderer.invoke('agent:delete-chat', chatId),
     onEvent(callback) {
       const listener = (_event, agentEvent) => callback(agentEvent);
       ipcRenderer.on('agent:event', listener);

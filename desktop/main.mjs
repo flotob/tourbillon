@@ -3,6 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { setupAgent } from './agent/host.mjs';
+import { openDatabase } from './db.mjs';
+import { setupTracks } from './tracks.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -105,7 +107,10 @@ app.whenReady().then(async () => {
     serveDist();
   }
   setPermissions();
-  await setupAgent({ getWindow: () => mainWindow, repoDir: path.resolve(__dirname, '..') });
+  const db = openDatabase(path.join(app.getPath('userData'), 'tourbillon.db'));
+  const getWindow = () => mainWindow;
+  setupTracks({ db, getWindow });
+  await setupAgent({ db, getWindow, repoDir: path.resolve(__dirname, '..') });
   createWindow();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
