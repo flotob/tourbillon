@@ -3,7 +3,7 @@ import { isolateHistory } from '@codemirror/commands';
 import { isPattern, Pattern, silence, stack } from '@strudel/core';
 import { evaluate } from '@strudel/transpiler';
 import { getSound, soundMap } from '@strudel/webaudio';
-import { $records, drumsCode } from '../crate/crateStore.mjs';
+import { $records, drumsCode, notesCode } from '../crate/crateStore.mjs';
 
 function getEditor() {
   const editor = window.strudelMirror;
@@ -226,15 +226,12 @@ function listSounds({ query }) {
   ].join('\n\n');
 }
 
-// the drums of a record's bars [from_bar, to_bar] as patterns on its kit
-async function getDrumPattern({ name, from_bar, to_bar }) {
+// a record and bars [from_bar, to_bar] of it, at most 32
+function recordBars(name, from_bar, to_bar) {
   const records = $records.get();
   const record = records.find((r) => r.name === name.trim().toLowerCase());
   if (!record) {
     throw new Error(`No record named "${name}". Records: ${records.map((r) => r.name).join(', ') || 'none'}`);
-  }
-  if (!record.drums) {
-    throw new Error(`The drum patterns of ${record.name} have not been found yet; use find_drum_patterns.`);
   }
   const from = Math.max(0, Math.floor(from_bar));
   const to = Math.min(record.bars, Math.floor(to_bar) + 1);
@@ -244,10 +241,31 @@ async function getDrumPattern({ name, from_bar, to_bar }) {
   if (to - from > 32) {
     throw new Error('At most 32 bars at a time.');
   }
+  return { record, from, to };
+}
+
+// the drums of a record's bars as patterns on its kit
+async function getDrumPattern({ name, from_bar, to_bar }) {
+  const { record, from, to } = recordBars(name, from_bar, to_bar);
+  if (!record.drums) {
+    throw new Error(`The drum patterns of ${record.name} have not been found yet; use find_drum_patterns.`);
+  }
   const kit = Object.keys(record.drums.hits).join(' ');
   return [
     fence(await drumsCode(record, from, to)),
     `The kit is the bank "${record.name}" (${kit}); another bank plays the same patterns on a drum machine. .velocity() is each hit's loudness, .swingBy() the record's swing. Add setcpm() if the code has no tempo; the patterns need no .fit().`,
+  ].join('\n');
+}
+
+// the bass line of a record's bars as notes
+function getBassNotes({ name, from_bar, to_bar }) {
+  const { record, from, to } = recordBars(name, from_bar, to_bar);
+  if (!record.notes?.bass) {
+    throw new Error(`The bass notes of ${record.name} are not there yet; the app updates records when it starts.`);
+  }
+  return [
+    fence(notesCode(record, from, to)),
+    `One bar per cycle; a@n holds a note for n 16ths. The sound is a placeholder: change .s() and the filter freely, transpose with .transpose(semitones), or play the record's own bass stem (${record.name}_bass) instead.`,
   ].join('\n');
 }
 
@@ -259,6 +277,7 @@ const tools = {
   get_status: getStatus,
   list_sounds: listSounds,
   get_drum_pattern: getDrumPattern,
+  get_bass_notes: getBassNotes,
 };
 
 export async function runEditorTool(name, args) {

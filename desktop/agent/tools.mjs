@@ -36,6 +36,9 @@ function describeRecord(record, { levels = false } = {}) {
       ? `drum kit from the record, the bank "${record.name}": ${Object.keys(record.drums.hits).join(' ')}, e.g. s("bd*4").bank("${record.name}"); get_drum_pattern returns its drums as patterns`
       : 'drum patterns not found yet (find_drum_patterns)',
   );
+  if (record.notes?.bass) {
+    lines.push('bass line as notes: get_bass_notes');
+  }
   if (record.playing) {
     lines.push(...parts.map((stem) => `${stem} plays in bars ${barRanges(record.playing[stem])}`));
   }
@@ -124,6 +127,17 @@ export function createTools({ callRenderer, knowledge, crate }) {
       label: 'Read drum pattern',
       description:
         "Returns the drums of bars of a record as Strudel code on the record's own kit: one line per drum (kick, snare, hi-hats, percussion, cymbals), one bar per cycle, with each hit's velocity and the record's swing. Plays at any tempo without .fit(). Needs the record's drum patterns (see find_drum_patterns).",
+      parameters: Type.Object({
+        name: Type.String({ description: 'Record name, e.g. "nataalma"' }),
+        from_bar: Type.Number({ description: 'First bar' }),
+        to_bar: Type.Number({ description: 'Last bar, included; at most 32 bars at a time' }),
+      }),
+    },
+    {
+      name: 'get_bass_notes',
+      label: 'Read bass notes',
+      description:
+        "Returns the bass line of bars of a record as Strudel notes: one bar per cycle, each note with its length in 16ths, on a placeholder synth. Use it to play, vary or reharmonize a record's bass line with your own sound.",
       parameters: Type.Object({
         name: Type.String({ description: 'Record name, e.g. "nataalma"' }),
         from_bar: Type.Number({ description: 'First bar' }),

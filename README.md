@@ -56,8 +56,12 @@ velocities and swing ([website/src/repl/crate/drumCode.mjs](website/src/repl/cra
 [ADTOF](https://github.com/MZehren/ADTOF), which crate downloads the first time (about 1.5 GB) and runs separately; it is
 free for non-commercial use only.
 
-The agent can look up records with `list_records` and `get_record`, make versions with `make_tempo_version`, and find
-and read drum patterns with `find_drum_patterns` and `get_drum_pattern`. Records are stored in
+Every record also has its bass line as notes (found by crate when it imports a record; older records are updated when
+the app starts). Select bars of the bass and insert them "as notes" to get them as `note("<a1 [f1@12 ~@4]>")` on a
+synth, where `@n` holds a note for n 16ths ([website/src/repl/crate/noteCode.mjs](website/src/repl/crate/noteCode.mjs)).
+
+The agent can look up records with `list_records` and `get_record`, make versions with `make_tempo_version`, find and
+read drum patterns with `find_drum_patterns` and `get_drum_pattern`, and read bass lines with `get_bass_notes`. Records are stored in
 `~/Library/Application Support/Tourbillon/crate` and served to the audio engine via `crate://`
 ([desktop/crate.mjs](desktop/crate.mjs)).
 

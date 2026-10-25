@@ -30,7 +30,7 @@ function barHits(steps, sound) {
 }
 
 // bars in a row, one per cycle: the bar itself when they are all the same, else "<a!3 b>"
-function sequence(codes) {
+export function sequence(codes) {
   if (codes.every((code) => code === codes[0])) {
     return codes[0];
   }

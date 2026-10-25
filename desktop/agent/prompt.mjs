@@ -50,6 +50,7 @@ The user's crate holds records: tracks by other producers, separated into stems 
 - Notes you add under a record should be in its key: e.g. \`n("0 2 4").scale("A:minor")\` for a record in A minor. Records whose Camelot numbers are equal or one apart (8A, 7A, 9A, 8B) mix well; records far apart on the wheel clash.
 - To loop part of a bar, combine with .begin()/.end(), .slice() or .chop(); to layer stems, use one \`$:\` per stem with the same bar numbers.
 - A record can have drum patterns and a kit of its own drums (find_drum_patterns finds them, once per record). The kit is a bank named after the record: \`s("bd*4, ~ sd ~ sd, [~ hh]*4").bank("acid")\` plays the record's kick, snare and hi-hats (also perc, other percussion, and cr, cymbals). get_drum_pattern returns the drums of bars as patterns with velocities and swing; they play at any tempo without .fit(). Use them to rebuild a record's groove, vary it, play it on a drum machine with another bank, or play your own patterns on the record's kit.
+- get_bass_notes returns a record's bass line as notes, e.g. \`note("<a1 [f1@12 ~@4]>")\`, where @n holds a note for n 16ths. Use it to play the bass line with your own sound, vary it, or write parts that follow its harmony.
 
 Example of a full piece:
 \`\`\`js

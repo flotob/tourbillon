@@ -24,6 +24,7 @@ import {
   findDrums,
   insertBars,
   insertDrums,
+  insertNotes,
   makeVersion,
   pickFiles,
   playDrum,
@@ -375,6 +376,17 @@ function StemMap({ record }) {
                 <span>loop</span>
               </ActionButton>
             )
+          )}
+          {selection?.stem === 'bass' && record.notes?.bass && (
+            <ActionButton
+              label="Add the bass line of the selected bars to the editor as notes, played on a synth"
+              labelIsHidden
+              className="flex items-center gap-1"
+              onClick={() => insertNotes(record, selection.from, selection.to)}
+            >
+              <PlusIcon className="w-4 h-4" />
+              <span>as notes</span>
+            </ActionButton>
           )}
           {selection?.stem === 'drums' && record.drums && (
             <ActionButton

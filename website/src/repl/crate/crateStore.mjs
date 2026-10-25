@@ -1,6 +1,6 @@
 // the crate in the renderer: records become strudel sounds (<record>_<stem>, n = bar), imports report progress,
 // bars can be auditioned and inserted as code. Records are made by the crate project, run by the main process.
-// A record's drum kit is a bank (<record>_bd, _sd, ...), and its drum hits can be inserted as patterns.
+// A record's drum kit is a bank (<record>_bd, _sd, ...), and its drum hits and bass line can be inserted as patterns.
 import { isolateHistory } from '@codemirror/commands';
 import { EditorView } from '@codemirror/view';
 import { logger } from '@strudel/core';
@@ -8,6 +8,7 @@ import { getAudioContext, loadBuffer, onTriggerSample, registerSound, soundMap }
 import { atom } from 'nanostores';
 import { setActiveFooter, setIsPanelOpened } from '../../settings.mjs';
 import { drumLines } from './drumCode.mjs';
+import { bassLine } from './noteCode.mjs';
 
 const crate = typeof window !== 'undefined' ? window.tourbillon?.crate : undefined;
 const BASE = 'crate://records/';
@@ -125,6 +126,19 @@ export async function drumsCode(record, from, to) {
     return `// no drums in ${span} of ${record.name}`;
   }
   return [`// the drums of ${record.name}, ${span}; .bank("tr909") plays them on a 909`, ...lines].join('\n');
+}
+
+// code that plays bars [from, to) of a record's bass line as notes on a synth
+export function notesCode(record, from, to) {
+  const span = to - from > 1 ? `bars ${from}–${to - 1}` : `bar ${from}`;
+  const line = bassLine(record, from, to);
+  return line
+    ? `// the bass line of ${record.name}, ${span}\n${line}`
+    : `// no bass notes in ${span} of ${record.name}`;
+}
+
+export function insertNotes(record, from, to) {
+  appendCode(record, notesCode(record, from, to).split('\n'));
 }
 
 export async function insertDrums(record, from, to) {
