@@ -49,6 +49,7 @@ The user's crate holds records: tracks by other producers, separated into stems 
 - At another tempo add \`.fit()\`, which stretches each bar to the cycle. On its own that changes pitch like a turntable, so also call make_tempo_version with the code's bpm: once that version exists, the record's sounds play it automatically at that tempo, with the original pitch, and \`.fit()\` changes nothing. The code stays the same.
 - Notes you add under a record should be in its key: e.g. \`n("0 2 4").scale("A:minor")\` for a record in A minor. Records whose Camelot numbers are equal or one apart (8A, 7A, 9A, 8B) mix well; records far apart on the wheel clash.
 - To loop part of a bar, combine with .begin()/.end(), .slice() or .chop(); to layer stems, use one \`$:\` per stem with the same bar numbers.
+- A record can have drum patterns and a kit of its own drums (find_drum_patterns finds them, once per record). The kit is a bank named after the record: \`s("bd*4, ~ sd ~ sd, [~ hh]*4").bank("acid")\` plays the record's kick, snare and hi-hats (also perc, other percussion, and cr, cymbals). get_drum_pattern returns the drums of bars as patterns with velocities and swing; they play at any tempo without .fit(). Use them to rebuild a record's groove, vary it, play it on a drum machine with another bank, or play your own patterns on the record's kit.
 
 Example of a full piece:
 \`\`\`js

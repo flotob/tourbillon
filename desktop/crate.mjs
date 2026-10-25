@@ -1,7 +1,8 @@
 // the crate: other producers' tracks ("records"), separated into stems and sliced into bars by the crate
 // project (a python sister repo, github.com/flotob/tourbillon-crate). In strudel, bar n of a stem is sample n
 // of the sound <record>_<stem>; the files are served to the renderer via crate://records/<record>/...
-// A record can have versions at other tempos (<record>/tempo/<bpm>/), stretched without changing pitch.
+// A record can have versions at other tempos (<record>/tempo/<bpm>/), stretched without changing pitch, and drum
+// patterns with a kit cut from it (<record>/drums/): its hits per 16th, and <record>_<drum> one-shots.
 import { dialog, ipcMain, net, protocol } from 'electron';
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
@@ -53,6 +54,20 @@ function readVersions(folder) {
   }
 }
 
+// the drums found in a record: when, and how many hits of each (bd, sd, hh, perc, cr); the hits themselves stay
+// in drums.json, which the renderer fetches when it writes code
+function readDrums(folder) {
+  try {
+    const drums = JSON.parse(fs.readFileSync(path.join(folder, 'drums', 'drums.json'), 'utf8'));
+    return {
+      created_at: drums.created_at,
+      hits: Object.fromEntries(Object.entries(drums.drums).map(([drum, { hits }]) => [drum, hits])),
+    };
+  } catch {
+    return undefined;
+  }
+}
+
 // partial folders are left behind by jobs that were running when the app quit
 function removePartials(dir) {
   for (const name of fs.readdirSync(dir)) {
@@ -99,7 +114,8 @@ export function readRecords(crateDir) {
         const meta = JSON.parse(fs.readFileSync(path.join(crateDir, name, 'record.json'), 'utf8'));
         const summary = Object.fromEntries(SUMMARY_FIELDS.map((field) => [field, meta[field]]));
         const first_downbeat = meta.grid?.first_downbeat ?? 0;
-        return [{ ...summary, first_downbeat, versions: readVersions(path.join(crateDir, name)) }];
+        const folder = path.join(crateDir, name);
+        return [{ ...summary, first_downbeat, versions: readVersions(folder), drums: readDrums(folder) }];
       } catch {
         return [];
       }
@@ -152,7 +168,7 @@ export function setupCrate({ getWindow, repoDir, crateDir }) {
   });
 
   // jobs run one at a time, each a `crate <command> --json` process: imports (add), versions at another tempo
-  // (tempo) and updates of records made by an older crate (analyze)
+  // (tempo), drum patterns (drums) and updates of records made by an older crate (analyze)
   const jobs = [];
   let nextJobId = 0;
   let running;
@@ -316,6 +332,28 @@ export function setupCrate({ getWindow, repoDir, crateDir }) {
     return { state: job.state, bpm };
   }
 
+  // a record's drum patterns and kit, found unless they exist or are on their way; the first time, crate
+  // installs ADTOF (about 1.5 GB) into its own environment
+  function findDrums(name) {
+    const record = findRecord(name);
+    if (record.drums) {
+      return { state: 'exists' };
+    }
+    const pending = jobs.find(
+      (job) => job.kind === 'drums' && job.name === name && ['queued', 'running'].includes(job.state),
+    );
+    const job =
+      pending ??
+      enqueue({
+        kind: 'drums',
+        args: ['drums', name],
+        name,
+        title: `${name} drums`,
+        partial: path.join(crateDir, name, '.drums.partial'),
+      });
+    return { state: job.state };
+  }
+
   function deleteVersion(name, bpm) {
     const record = findRecord(name);
     const version = record.versions.find((version) => sameTempo(version, bpm));
@@ -364,8 +402,8 @@ export function setupCrate({ getWindow, repoDir, crateDir }) {
   });
   handle('crate:delete', (name) => {
     findRecord(name);
-    // its versions being made go with it
-    for (const job of jobs.filter((job) => job.name === name && job.kind === 'tempo')) {
+    // its versions and drums being made go with it
+    for (const job of jobs.filter((job) => job.name === name && job.kind !== 'add')) {
       if (job.state === 'queued') {
         job.state = 'cancelled';
       } else if (job.state === 'running') {
@@ -379,10 +417,12 @@ export function setupCrate({ getWindow, repoDir, crateDir }) {
   });
   handle('crate:make-version', (name, bpm) => makeVersion(name, bpm));
   handle('crate:delete-version', (name, bpm) => deleteVersion(name, bpm));
+  handle('crate:find-drums', (name) => findDrums(name));
 
   return {
     records: () => readRecords(crateDir),
     makeVersion,
+    findDrums,
     // a job in progress is killed with the app; its partial folder is removed on the next start
     stop: () => running && kill(running),
   };

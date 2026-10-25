@@ -19,3 +19,8 @@ Sample libraries loaded at runtime are hosted by third parties and keep their ow
 The crate feature runs [crate](https://github.com/flotob/tourbillon-crate), a separate AGPL-3.0-or-later project that
 uses Demucs and Beat This! (MIT), Essentia (AGPL-3.0) and the Rubber Band command line program (GPL-2.0-or-later). Records in the crate are derived from the user's own audio files and stay on their
 machine; only import music you have the rights to use.
+
+Drum patterns are found by [ADTOF](https://github.com/MZehren/ADTOF) (code and model weights under
+[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/), free for non-commercial use only). ADTOF is not
+part of Tourbillon or crate and is not distributed with them: crate downloads it when the user first asks for drum
+patterns, into its own environment, and runs it as a separate program.

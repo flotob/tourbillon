@@ -3,6 +3,7 @@ import { isolateHistory } from '@codemirror/commands';
 import { isPattern, Pattern, silence, stack } from '@strudel/core';
 import { evaluate } from '@strudel/transpiler';
 import { getSound, soundMap } from '@strudel/webaudio';
+import { $records, drumsCode } from '../crate/crateStore.mjs';
 
 function getEditor() {
   const editor = window.strudelMirror;
@@ -225,6 +226,31 @@ function listSounds({ query }) {
   ].join('\n\n');
 }
 
+// the drums of a record's bars [from_bar, to_bar] as patterns on its kit
+async function getDrumPattern({ name, from_bar, to_bar }) {
+  const records = $records.get();
+  const record = records.find((r) => r.name === name.trim().toLowerCase());
+  if (!record) {
+    throw new Error(`No record named "${name}". Records: ${records.map((r) => r.name).join(', ') || 'none'}`);
+  }
+  if (!record.drums) {
+    throw new Error(`The drum patterns of ${record.name} have not been found yet; use find_drum_patterns.`);
+  }
+  const from = Math.max(0, Math.floor(from_bar));
+  const to = Math.min(record.bars, Math.floor(to_bar) + 1);
+  if (to <= from) {
+    throw new Error(`${record.name} has bars 0-${record.bars - 1}.`);
+  }
+  if (to - from > 32) {
+    throw new Error('At most 32 bars at a time.');
+  }
+  const kit = Object.keys(record.drums.hits).join(' ');
+  return [
+    fence(await drumsCode(record, from, to)),
+    `The kit is the bank "${record.name}" (${kit}); another bank plays the same patterns on a drum machine. .velocity() is each hit's loudness, .swingBy() the record's swing. Add setcpm() if the code has no tempo; the patterns need no .fit().`,
+  ].join('\n');
+}
+
 const tools = {
   get_code: getCode,
   edit_code: editCode,
@@ -232,6 +258,7 @@ const tools = {
   check_pattern: checkPattern,
   get_status: getStatus,
   list_sounds: listSounds,
+  get_drum_pattern: getDrumPattern,
 };
 
 export async function runEditorTool(name, args) {

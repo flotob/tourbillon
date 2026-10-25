@@ -32,6 +32,9 @@ function describeRecord(record, { levels = false } = {}) {
       ? `versions with the same pitch at ${record.versions.join(', ')} bpm`
       : 'no versions at other tempos',
     `sounds: ${record.stems.map((stem) => `${record.name}_${stem}`).join(', ')}`,
+    record.drums
+      ? `drum kit from the record, the bank "${record.name}": ${Object.keys(record.drums.hits).join(' ')}, e.g. s("bd*4").bank("${record.name}"); get_drum_pattern returns its drums as patterns`
+      : 'drum patterns not found yet (find_drum_patterns)',
   );
   if (record.playing) {
     lines.push(...parts.map((stem) => `${stem} plays in bars ${barRanges(record.playing[stem])}`));
@@ -115,6 +118,17 @@ export function createTools({ callRenderer, knowledge, crate }) {
       description:
         'Returns whether music is playing, the current tempo, whether the editor has changes that were not evaluated yet, and the last evaluation error, if any.',
       parameters: Type.Object({}),
+    },
+    {
+      name: 'get_drum_pattern',
+      label: 'Read drum pattern',
+      description:
+        "Returns the drums of bars of a record as Strudel code on the record's own kit: one line per drum (kick, snare, hi-hats, percussion, cymbals), one bar per cycle, with each hit's velocity and the record's swing. Plays at any tempo without .fit(). Needs the record's drum patterns (see find_drum_patterns).",
+      parameters: Type.Object({
+        name: Type.String({ description: 'Record name, e.g. "nataalma"' }),
+        from_bar: Type.Number({ description: 'First bar' }),
+        to_bar: Type.Number({ description: 'Last bar, included; at most 32 bars at a time' }),
+      }),
     },
     {
       name: 'list_sounds',
@@ -231,5 +245,26 @@ export function createTools({ callRenderer, knowledge, crate }) {
     },
   });
 
-  return [...editorTools, searchDocs, getFunction, readDoc, listRecords, getRecord, makeTempoVersion];
+  const findDrumPatterns = defineTool({
+    name: 'find_drum_patterns',
+    label: 'Find drum patterns',
+    description:
+      "Finds which drum hits on which 16th of every bar of a record, how loud, and cuts a kit of the record's own drums, in the background (about 10 seconds; the first time it downloads ADTOF, about 1.5 GB, which is free for non-commercial use). Afterwards get_drum_pattern returns the drums of any bars as patterns.",
+    parameters: Type.Object({ name: Type.String({ description: 'Record name, e.g. "nataalma"' }) }),
+    async execute(_toolCallId, { name: given }) {
+      if (!crate) {
+        throw new Error('The crate is not available.');
+      }
+      const name = given.trim().toLowerCase();
+      const { state } = crate.findDrums(name);
+      const messages = {
+        exists: `The drum patterns and kit of ${name} exist already; use get_drum_pattern.`,
+        queued: `Finding the drums of ${name} is queued; the crate tab shows its progress.`,
+        running: `The drums of ${name} are being found; the crate tab shows its progress.`,
+      };
+      return text(messages[state]);
+    },
+  });
+
+  return [...editorTools, searchDocs, getFunction, readDoc, listRecords, getRecord, makeTempoVersion, findDrumPatterns];
 }

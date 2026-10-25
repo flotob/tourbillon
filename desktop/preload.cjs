@@ -36,6 +36,8 @@ contextBridge.exposeInMainWorld('tourbillon', {
     // a version of a record at another tempo, same pitch
     makeVersion: (name, bpm) => ipcRenderer.invoke('crate:make-version', name, bpm),
     deleteVersion: (name, bpm) => ipcRenderer.invoke('crate:delete-version', name, bpm),
+    // a record's drum patterns and its kit; the first time, this installs ADTOF
+    findDrums: (name) => ipcRenderer.invoke('crate:find-drums', name),
     pathForFile: (file) => webUtils.getPathForFile(file),
     // { type: 'jobs', jobs } and { type: 'records', records }
     onEvent(callback) {

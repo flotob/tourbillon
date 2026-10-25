@@ -46,9 +46,20 @@ plays: click a bar to listen from there (Esc stops), drag to select bars, and in
 A record can get versions at other tempos, stretched without changing pitch (about 3 seconds per minute of music). When
 the code plays near the tempo of a version, the record's sounds play that version instead of the original, so
 `.fit()` no longer shifts the pitch. Inserting bars at another tempo makes that version; the crate tab can make
-others. The agent can look up records with `list_records` and `get_record` and make versions with
-`make_tempo_version`. Records are stored in `~/Library/Application Support/Tourbillon/crate` and served to the audio
-engine via `crate://` ([desktop/crate.mjs](desktop/crate.mjs)).
+others.
+
+A record can also get drum patterns and a kit of its own drums ("find patterns and kit" in the crate tab): which drum
+hits on which 16th of every bar, how loud, and one clean hit of each drum, cut from the record. The kit is a bank named
+after the record, so `s("bd*4, ~ sd ~ sd").bank("<record>")` plays the record's kick and snare, and `.bank("tr909")`
+plays its patterns on a 909. Select bars of the drums and insert them "as patterns" to get one line per drum with
+velocities and swing ([website/src/repl/crate/drumCode.mjs](website/src/repl/crate/drumCode.mjs)). The hits are found by
+[ADTOF](https://github.com/MZehren/ADTOF), which crate downloads the first time (about 1.5 GB) and runs separately; it is
+free for non-commercial use only.
+
+The agent can look up records with `list_records` and `get_record`, make versions with `make_tempo_version`, and find
+and read drum patterns with `find_drum_patterns` and `get_drum_pattern`. Records are stored in
+`~/Library/Application Support/Tourbillon/crate` and served to the audio engine via `crate://`
+([desktop/crate.mjs](desktop/crate.mjs)).
 
 For development:
 

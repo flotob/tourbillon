@@ -1,11 +1,13 @@
 // the crate in the renderer: records become strudel sounds (<record>_<stem>, n = bar), imports report progress,
 // bars can be auditioned and inserted as code. Records are made by the crate project, run by the main process.
+// A record's drum kit is a bank (<record>_bd, _sd, ...), and its drum hits can be inserted as patterns.
 import { isolateHistory } from '@codemirror/commands';
 import { EditorView } from '@codemirror/view';
 import { logger } from '@strudel/core';
 import { getAudioContext, loadBuffer, onTriggerSample, registerSound, soundMap } from '@strudel/webaudio';
 import { atom } from 'nanostores';
 import { setActiveFooter, setIsPanelOpened } from '../../settings.mjs';
+import { drumLines } from './drumCode.mjs';
 
 const crate = typeof window !== 'undefined' ? window.tourbillon?.crate : undefined;
 const BASE = 'crate://records/';
@@ -28,6 +30,9 @@ const barPath = (record, stem, bar, bpm) =>
   `${record.name}/${bpm ? `tempo/${bpm}` : 'bars'}/${stem}/${String(bar).padStart(3, '0')}.flac?v=${Math.round(record.created_at)}`;
 const barUrls = (record, stem, bpm) =>
   Array.from({ length: record.bars }, (_, bar) => BASE + barPath(record, stem, bar, bpm));
+
+const drumsVersion = (record) => `?v=${Math.round(record.drums.created_at)}`;
+const kitUrl = (record, drum) => `${BASE}${record.name}/drums/${drum}.flac${drumsVersion(record)}`;
 
 // the version to play at cps with one bar per cycle: the one closest in tempo, unless the record itself is closer
 export function versionFor(record, cps) {
@@ -59,6 +64,14 @@ export async function registerCrateSounds(records) {
       registerSound(key, onTrigger, { type: 'sample', samples: original, baseUrl: BASE, prebake: true, tag: 'crate' });
       keys.add(key);
     }
+    // the kit: one hit of each drum, e.g. s("bd*4").bank("<record>")
+    for (const drum of Object.keys(record.drums?.hits ?? {})) {
+      const key = `${record.name}_${drum}`;
+      const samples = [kitUrl(record, drum)];
+      const onTrigger = (t, value, onended) => onTriggerSample(t, value, onended, samples);
+      registerSound(key, onTrigger, { type: 'sample', samples, baseUrl: BASE, prebake: true, tag: 'crate' });
+      keys.add(key);
+    }
   }
   for (const key of registered) {
     if (!keys.has(key)) {
@@ -83,6 +96,53 @@ export const clearJobs = () => crate.clearJobs();
 
 export const makeVersion = (name, bpm) => crate.makeVersion(name, bpm);
 export const deleteVersion = (name, bpm) => crate.deleteVersion(name, bpm);
+export const findDrums = (name) => crate.findDrums(name);
+
+// a record's drums.json: every hit as [bar, 16th, velocity, ms off the 16th] per drum
+const drumData = new Map();
+export function loadDrums(record) {
+  const url = `${BASE}${record.name}/drums/drums.json${drumsVersion(record)}`;
+  if (!drumData.has(url)) {
+    drumData.set(
+      url,
+      fetch(url).then((response) => {
+        if (!response.ok) {
+          drumData.delete(url);
+          throw new Error(`the drums of ${record.name} could not be read`);
+        }
+        return response.json();
+      }),
+    );
+  }
+  return drumData.get(url);
+}
+
+// code that plays bars [from, to) of a record's drums as patterns on its kit
+export async function drumsCode(record, from, to) {
+  const lines = drumLines(record, await loadDrums(record), from, to);
+  const span = to - from > 1 ? `bars ${from}–${to - 1}` : `bar ${from}`;
+  if (!lines.length) {
+    return `// no drums in ${span} of ${record.name}`;
+  }
+  return [`// the drums of ${record.name}, ${span}; .bank("tr909") plays them on a 909`, ...lines].join('\n');
+}
+
+export async function insertDrums(record, from, to) {
+  appendCode(record, (await drumsCode(record, from, to)).split('\n'));
+}
+
+// one hit of the kit, straight to the output
+export async function playDrum(record, drum) {
+  const ac = getAudioContext();
+  if (ac.state === 'suspended') {
+    await ac.resume();
+  }
+  const buffer = await loadBuffer(kitUrl(record, drum), ac, `${record.name}_${drum}`, 0);
+  const source = ac.createBufferSource();
+  source.buffer = buffer;
+  source.connect(ac.destination);
+  source.start();
+}
 
 export async function deleteRecord(name) {
   if ($audition.get()?.name === name) {
@@ -221,24 +281,31 @@ export function barsCode(record, stem, from, to) {
   return `$: s("${record.name}_${stem}").n(${bars})`;
 }
 
-// appends the code to the editor as one undo step; sets the record's tempo if the code has none
+const hasTempo = (code) => /\bset(cpm|cps|bpm)\s*\(/.test(code);
+
+// appends bars of a stem to the editor; sets the record's tempo if the code has none, and at another tempo
+// stretches the bars and makes a version of the record at that tempo
 export function insertBars(record, stem, from, to) {
   const editor = window.strudelMirror;
-  const view = editor.editor;
-  const code = view.state.doc.toString();
   const bpm = +record.bpm.toFixed(2);
-  const lines = [];
-  if (!/\bset(cpm|cps|bpm)\s*\(/.test(code)) {
-    lines.push(`setcpm(${bpm}/4) // the tempo of ${record.name}: one cycle is one bar`);
-  }
   let line = barsCode(record, stem, from, to);
   const tempo = Math.round(editor.repl.scheduler.cps * 240 * 100) / 100;
-  if (lines.length === 0 && Math.abs(tempo - bpm) > 0.5) {
+  if (hasTempo(editor.editor.state.doc.toString()) && Math.abs(tempo - bpm) > 0.5) {
     // fit stretches each bar to a cycle, which shifts its pitch like a turntable; a version at this tempo keeps it
     line += `.fit() // ${record.name} is ${bpm} bpm`;
     makeVersion(record.name, tempo).catch((err) => logger(`[crate] ${err.message}`, 'error'));
   }
-  lines.push(line);
+  appendCode(record, [line]);
+}
+
+// appends lines to the editor as one undo step, after the record's tempo if the code has none
+function appendCode(record, added) {
+  const view = window.strudelMirror.editor;
+  const code = view.state.doc.toString();
+  const lines = [...added];
+  if (!hasTempo(code)) {
+    lines.unshift(`setcpm(${+record.bpm.toFixed(2)}/4) // the tempo of ${record.name}: one cycle is one bar`);
+  }
   const prefix = code.length === 0 || code.endsWith('\n\n') ? '' : code.endsWith('\n') ? '\n' : '\n\n';
   const insert = prefix + lines.join('\n') + '\n';
   view.dispatch({

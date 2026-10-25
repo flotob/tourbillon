@@ -1,5 +1,6 @@
 import { PlayIcon, PlusIcon, StopIcon, TrashIcon, XMarkIcon } from '@heroicons/react/16/solid';
 import { useStore } from '@nanostores/react';
+import { logger } from '@strudel/core';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import cx from '@src/cx.mjs';
 import { ActionButton } from '../components/button/action-button.jsx';
@@ -20,12 +21,16 @@ import {
   clearJobs,
   deleteRecord,
   deleteVersion,
+  findDrums,
   insertBars,
+  insertDrums,
   makeVersion,
   pickFiles,
+  playDrum,
   stopAudition,
   versionFor,
 } from './crateStore.mjs';
+import { DRUMS, DRUM_NAMES } from './drumCode.mjs';
 
 const minutes = (seconds) => `${Math.floor(seconds / 60)}:${String(Math.round(seconds % 60)).padStart(2, '0')}`;
 
@@ -37,10 +42,32 @@ const STEPS = {
   writing: 'cutting bars',
   stretching: 'stretching, same pitch',
   analyzing: 'finding the key',
+  installing_adtof: 'downloading ADTOF, first time only (about 1.5 GB)',
+  transcribing: 'finding the drum hits',
+  cutting: 'cutting the kit',
 };
-// share of the whole job that each step starts and ends at; imports separate, versions stretch, then both write
-const STEP_START = { separating: 0, beats: 0.8, stretching: 0, writing: 0.85, analyzing: 0 };
-const STEP_END = { separating: 0.8, beats: 0.85, stretching: 0.85, writing: 1, analyzing: 1 };
+// share of the whole job that each step starts and ends at; imports separate, versions stretch, then both write;
+// drums install ADTOF once, then find the hits
+const STEP_START = {
+  separating: 0,
+  beats: 0.8,
+  stretching: 0,
+  writing: 0.85,
+  analyzing: 0,
+  installing_adtof: 0,
+  transcribing: 0.1,
+  cutting: 0.9,
+};
+const STEP_END = {
+  separating: 0.8,
+  beats: 0.85,
+  stretching: 0.85,
+  writing: 1,
+  analyzing: 1,
+  installing_adtof: 1,
+  transcribing: 0.9,
+  cutting: 1,
+};
 // ipc errors arrive as "Error invoking remote method 'crate:…': Error: <message>"
 const errorText = (err) => err.message.replace(/^Error invoking remote method '[^']+': (Error: )?/, '');
 const sameTempo = (a, b) => Math.abs(a - b) < 0.005;
@@ -349,6 +376,21 @@ function StemMap({ record }) {
               </ActionButton>
             )
           )}
+          {selection?.stem === 'drums' && record.drums && (
+            <ActionButton
+              label="Add the drums of the selected bars to the editor as patterns, on the record's own kit"
+              labelIsHidden
+              className="flex items-center gap-1"
+              onClick={() =>
+                insertDrums(record, selection.from, selection.to).catch((err) =>
+                  logger(`[crate] ${err.message}`, 'error'),
+                )
+              }
+            >
+              <PlusIcon className="w-4 h-4" />
+              <span>as patterns</span>
+            </ActionButton>
+          )}
           {selection && (
             <ActionButton
               label="Add code that plays the selected bars to the editor"
@@ -477,6 +519,60 @@ function Tempos({ record }) {
   );
 }
 
+// the record's drum kit, cut from it, and its drum patterns, found with ADTOF in the drums stem
+function Drums({ record }) {
+  const jobs = useStore($jobs);
+  const [error, setError] = useState();
+  const finding = jobs.some(
+    (job) => job.kind === 'drums' && job.name === record.name && (job.state === 'queued' || job.state === 'running'),
+  );
+  const kit = DRUMS.filter((drum) => drum in (record.drums?.hits ?? {}));
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+      <span
+        className="opacity-50"
+        title={`Which drum plays on which 16th of every bar, and a kit of the record's own drums: s("bd*4").bank("${record.name}")`}
+      >
+        Drums
+      </span>
+      {record.drums ? (
+        <>
+          {kit.map((drum) => (
+            <ActionButton
+              key={drum}
+              label={`Listen to the ${DRUM_NAMES[drum]} of the kit, ${record.name}_${drum}; it plays ${record.drums.hits[drum]} times in the record`}
+              labelIsHidden
+              className="flex items-center gap-0.5 opacity-80"
+              onClick={() => playDrum(record, drum)}
+            >
+              <PlayIcon className="w-3 h-3" />
+              <span>{drum}</span>
+            </ActionButton>
+          ))}
+          <span className="opacity-50">Select bars of the drums to insert them as patterns.</span>
+        </>
+      ) : finding ? (
+        <span className="opacity-50 animate-pulse">finding the drum hits…</span>
+      ) : (
+        <ActionButton
+          label="Find which drum plays on which 16th, and cut a kit from the record. Uses ADTOF, which is free for non-commercial use; the first time, it downloads about 1.5 GB."
+          labelIsHidden
+          className="flex items-center gap-0.5"
+          onClick={() => {
+            setError(undefined);
+            findDrums(record.name).catch((err) => setError(errorText(err)));
+          }}
+        >
+          <PlusIcon className="w-3 h-3" />
+          <span>find patterns and kit</span>
+        </ActionButton>
+      )}
+      {error && <span className="text-red-400">{error}</span>}
+    </div>
+  );
+}
+
 function Record({ record, open, onToggle }) {
   return (
     <div className={cx('rounded', open ? 'bg-background px-3 py-2 space-y-3' : 'px-3 py-1.5 hover:bg-background')}>
@@ -521,6 +617,7 @@ function Record({ record, open, onToggle }) {
         <>
           <StemMap record={record} />
           <Tempos record={record} />
+          <Drums record={record} />
         </>
       )}
     </div>
