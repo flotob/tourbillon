@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { setupAgent } from './agent/host.mjs';
+import { crateScheme, setupCrate } from './crate.mjs';
 import { openDatabase } from './db.mjs';
 import { setupTracks } from './tracks.mjs';
 
@@ -29,6 +30,7 @@ protocol.registerSchemesAsPrivileged([
     scheme: 'app',
     privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true },
   },
+  crateScheme,
 ]);
 
 function serveDist() {
@@ -131,8 +133,11 @@ app.whenReady().then(async () => {
   setMenu();
   const db = openDatabase(path.join(app.getPath('userData'), 'tourbillon.db'));
   const getWindow = () => mainWindow;
+  const repoDir = path.resolve(__dirname, '..');
   setupTracks({ db, getWindow });
-  await setupAgent({ db, getWindow, repoDir: path.resolve(__dirname, '..') });
+  const crate = setupCrate({ getWindow, repoDir, crateDir: path.join(app.getPath('userData'), 'crate') });
+  app.on('before-quit', crate.stop);
+  await setupAgent({ db, getWindow, repoDir, crate });
   createWindow();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

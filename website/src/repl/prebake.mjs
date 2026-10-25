@@ -1,6 +1,7 @@
 import { Pattern, noteToMidi, valueToMidi } from '@strudel/core';
 import { aliasBank, registerSynthSounds, registerZZFXSounds, samples } from '@strudel/webaudio';
 import { registerSamplesFromDB } from './idbutils.mjs';
+import { registerCrateSounds } from './crate/crateStore.mjs';
 import './piano.mjs';
 import './files.mjs';
 import { settingsMap } from '@src/settings.mjs';
@@ -17,6 +18,8 @@ export async function prebake() {
     registerSynthSounds(),
     registerZZFXSounds(),
     registerSamplesFromDB(),
+    // records in the desktop app's crate, as <record>_<stem>
+    registerCrateSounds(),
     //registerSoundfonts(),
     // need dynamic import here, because importing @strudel/soundfonts fails on server:
     // => getting "window is not defined", as soon as "@strudel/soundfonts" is imported statically

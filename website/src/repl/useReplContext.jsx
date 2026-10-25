@@ -40,6 +40,7 @@ import { setInterval, clearInterval } from 'worker-timers';
 import { getMetadata } from '../metadata_parser';
 import { debugAudiograph } from './audiograph';
 import { evaluated, initTracks, replStateChanged } from './tracks/tracksStore.mjs';
+import { initCrate } from './crate/crateStore.mjs';
 
 const { latestCode, maxPolyphony, audioDeviceName, multiChannelOrbits } = settingsMap.get();
 let modulesLoading, presets, drawContext, clearCanvas, audioReady;
@@ -152,6 +153,7 @@ export function useReplContext() {
     window.debugAudiograph = debugAudiograph;
 
     if (DESKTOP) {
+      initCrate();
       initTracks(editor).then(() =>
         logger(`Welcome to Tourbillon! Press play or hit ctrl+enter to run your track.`, 'highlight'),
       );

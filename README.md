@@ -32,6 +32,19 @@ and every evaluation (Ctrl+Enter) keeps a version in the track's history. Agent 
 file, `~/Library/Application Support/Tourbillon/tourbillon.db` on macOS ([desktop/db.mjs](desktop/db.mjs)), so copying
 that file backs up all tracks, versions and chats.
 
+### Crate
+
+The crate holds records: other producers' tracks, separated into stems (drums, bass, other, vocals, plus the original
+mix) and cut into bars by [crate](https://github.com/flotob/tourbillon-crate), a Python project that Tourbillon runs
+locally. Clone it next to this repository as `crate` and install [uv](https://docs.astral.sh/uv/) and ffmpeg; the first
+import sets up its Python environment.
+
+Drop audio files anywhere on the window, or use the crate tab, to import them. Bar n of a stem plays as
+`s("<record>_<stem>").n(n)`, with no `samples()` call needed. The crate tab shows where each stem plays: click a bar to
+listen from there, drag to select bars, and insert them as code. The agent can look up records with `list_records` and
+`get_record`. Records are stored in `~/Library/Application Support/Tourbillon/crate` and served to the audio engine via
+`crate://` ([desktop/crate.mjs](desktop/crate.mjs)).
+
 For development:
 
 - `TOURBILLON_AGENT_SCRIPT=scripts/agent-smoke.mjs pnpm desktop` replaces the model with a scripted one that runs every

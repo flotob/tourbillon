@@ -4,6 +4,42 @@ import { formatFunction } from './knowledge.mjs';
 
 const text = (value) => ({ content: [{ type: 'text', text: value }], details: undefined });
 
+const PARTS = ['drums', 'bass', 'other', 'vocals'];
+// bar ranges are [start, end); shown with the last bar included
+const barRanges = (ranges = []) =>
+  ranges.length
+    ? ranges.map(([start, end]) => (end - start > 1 ? `${start}-${end - 1}` : `${start}`)).join(', ')
+    : 'nowhere';
+const minutes = (seconds) => `${Math.floor(seconds / 60)}:${String(Math.round(seconds % 60)).padStart(2, '0')}`;
+// dBFS to 0 (silent) .. 9 (loudest)
+const levelDigit = (db) => Math.max(0, Math.min(9, Math.round((db + 54) / 5)));
+
+function describeRecord(record, { levels = false } = {}) {
+  const by = record.artist ? ` by ${record.artist}` : '';
+  const parts = PARTS.filter((stem) => record.stems.includes(stem));
+  const lines = [
+    `${record.name}: "${record.title}"${by}`,
+    `${+record.bpm.toFixed(2)} bpm, ${record.bars} bars (0-${record.bars - 1}) of ${(240 / record.bpm).toFixed(3)}s, ${minutes(record.duration)}`,
+    `sounds: ${record.stems.map((stem) => `${record.name}_${stem}`).join(', ')}`,
+  ];
+  if (record.playing) {
+    lines.push(...parts.map((stem) => `${stem} plays in bars ${barRanges(record.playing[stem])}`));
+  }
+  if (levels && record.levels) {
+    lines.push(
+      '',
+      'Loudness per bar, 0 = silent to 9 = loudest:',
+      ['bars'.padEnd(10), ...parts.map((p) => p.padEnd(9))].join(''),
+    );
+    for (let start = 0; start < record.bars; start += 8) {
+      const end = Math.min(start + 8, record.bars);
+      const digits = parts.map((stem) => record.levels[stem].slice(start, end).map(levelDigit).join('').padEnd(9));
+      lines.push([`${start}-${end - 1}`.padEnd(10), ...digits].join(''));
+    }
+  }
+  return lines.join('\n');
+}
+
 // editor tools run in the renderer, where the editor and the strudel runtime live
 function rendererTool({ name, label, description, parameters }, callRenderer) {
   return defineTool({
@@ -21,7 +57,7 @@ function rendererTool({ name, label, description, parameters }, callRenderer) {
   });
 }
 
-export function createTools({ callRenderer, knowledge }) {
+export function createTools({ callRenderer, knowledge, crate }) {
   const editorTools = [
     {
       name: 'get_code',
@@ -128,5 +164,36 @@ export function createTools({ callRenderer, knowledge }) {
     },
   });
 
-  return [...editorTools, searchDocs, getFunction, readDoc];
+  const listRecords = defineTool({
+    name: 'list_records',
+    label: 'List records',
+    description:
+      "Lists the records in the user's crate (tracks separated into stems and cut into bars): name, title, tempo, bars and where each stem plays.",
+    parameters: Type.Object({}),
+    async execute() {
+      const records = crate?.records() ?? [];
+      if (!records.length) {
+        return text('The crate is empty. The user can drop audio files on the app to import them.');
+      }
+      return text(records.map((record) => describeRecord(record)).join('\n\n'));
+    },
+  });
+
+  const getRecord = defineTool({
+    name: 'get_record',
+    label: 'Read record',
+    description:
+      'Returns one record of the crate: tempo, bar count, sound names, the bar ranges where each stem plays, and the loudness of each stem per bar.',
+    parameters: Type.Object({ name: Type.String({ description: 'Record name, e.g. "nataalma"' }) }),
+    async execute(_toolCallId, { name }) {
+      const records = crate?.records() ?? [];
+      const record = records.find((r) => r.name === name.trim().toLowerCase());
+      if (!record) {
+        throw new Error(`No record named "${name}". Records: ${records.map((r) => r.name).join(', ') || 'none'}`);
+      }
+      return text(describeRecord(record, { levels: true }));
+    },
+  });
+
+  return [...editorTools, searchDocs, getFunction, readDoc, listRecords, getRecord];
 }

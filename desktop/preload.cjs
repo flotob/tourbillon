@@ -1,5 +1,5 @@
 // sandboxed preloads must be commonjs
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 contextBridge.exposeInMainWorld('tourbillon', {
   desktop: true,
@@ -21,6 +21,25 @@ contextBridge.exposeInMainWorld('tourbillon', {
     const listener = (_event, action) => callback(action);
     ipcRenderer.on('menu', listener);
     return () => ipcRenderer.removeListener('menu', listener);
+  },
+  // records: other producers' tracks as bar-sliced stems, played as <record>_<stem> with n = bar
+  crate: {
+    status: () => ipcRenderer.invoke('crate:status'),
+    records: () => ipcRenderer.invoke('crate:records'),
+    jobs: () => ipcRenderer.invoke('crate:jobs'),
+    // paths of audio files; dropped files give theirs via pathForFile
+    import: (files) => ipcRenderer.invoke('crate:import', files),
+    pick: () => ipcRenderer.invoke('crate:pick'),
+    cancel: (jobId) => ipcRenderer.invoke('crate:cancel', jobId),
+    clearJobs: () => ipcRenderer.invoke('crate:clear-jobs'),
+    remove: (name) => ipcRenderer.invoke('crate:delete', name),
+    pathForFile: (file) => webUtils.getPathForFile(file),
+    // { type: 'jobs', jobs } and { type: 'records', records }
+    onEvent(callback) {
+      const listener = (_event, crateEvent) => callback(crateEvent);
+      ipcRenderer.on('crate:event', listener);
+      return () => ipcRenderer.removeListener('crate:event', listener);
+    },
   },
   agent: {
     status: () => ipcRenderer.invoke('agent:status'),

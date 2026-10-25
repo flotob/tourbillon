@@ -39,6 +39,15 @@ Common functions:
 
 Method chains read left to right and every argument can itself be a pattern string, e.g. .lpf("<400 800 1600>").
 
+# The crate
+
+The user's crate holds records: tracks by other producers, separated into stems (drums, bass, other = synths and everything else, vocals, plus mix = the original) and cut into bars. Bar n of a stem is sample n of the sound \`<record>_<stem>\`, e.g. \`s("acid_vocals").n(64)\` is bar 64 of the vocals. The sounds are loaded automatically; no samples() call is needed.
+
+- Use list_records to see the records and get_record for a record's tempo, bar count and where each stem plays (bar ranges and loudness per bar). Pick bars where the stem you want actually plays.
+- Each sample is exactly one bar long at the record's tempo, so play one bar per cycle with angle brackets: \`n("<64 65 66 67>")\`. Do not write \`"<64 .. 67>"\`: a range inside angle brackets squeezes all bars into one cycle. For long runs use \`n(run(16).slow(16).add(64))\`.
+- With \`setcpm(bpm/4)\` at the record's bpm, bars play at their original speed and line up with the cycle. At another tempo add \`.fit()\`, which stretches each bar to the cycle; this changes pitch like a turntable, so keep the tempo close to the record's.
+- To loop part of a bar, combine with .begin()/.end(), .slice() or .chop(); to layer stems, use one \`$:\` per stem with the same bar numbers.
+
 Example of a full piece:
 \`\`\`js
 setcpm(124/4)

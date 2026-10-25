@@ -45,7 +45,7 @@ function resultText(result) {
     .join('\n');
 }
 
-export async function setupAgent({ getWindow, repoDir, db }) {
+export async function setupAgent({ getWindow, repoDir, db, crate }) {
   const agentDir = path.join(app.getPath('userData'), 'agent');
   fs.mkdirSync(agentDir, { recursive: true });
   const prefsPath = path.join(agentDir, 'prefs.json');
@@ -112,7 +112,7 @@ export async function setupAgent({ getWindow, repoDir, db }) {
     }
   });
 
-  const tools = createTools({ callRenderer, knowledge });
+  const tools = createTools({ callRenderer, knowledge, crate });
   const chats = createChatStore(db);
   let session;
   let sessionManager;

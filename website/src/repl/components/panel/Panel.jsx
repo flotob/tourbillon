@@ -14,6 +14,7 @@ import { SoundsTab } from './SoundsTab';
 import { WelcomeTab } from './WelcomeTab';
 import { AgentTab } from '../../agent/AgentTab';
 import { TracksTab } from '../../tracks/TracksTab';
+import { CrateTab } from '../../crate/CrateTab';
 
 const TAURI = typeof window !== 'undefined' && window.__TAURI__;
 const DESKTOP = typeof window !== 'undefined' && window.tourbillon?.desktop;
@@ -233,7 +234,7 @@ export function RightPanel({ context }) {
 }
 
 const tabNames = {
-  ...(DESKTOP && { agent: 'agent', tracks: 'tracks' }),
+  ...(DESKTOP && { agent: 'agent', tracks: 'tracks', crate: 'crate' }),
   // the desktop app starts with the agent and stores code in tracks
   ...(!DESKTOP && { welcome: 'intro', patterns: 'patterns' }),
   sounds: 'sounds',
@@ -275,6 +276,9 @@ function PanelContent({ context, tab }) {
   }
   if (DESKTOP && tab === tabNames.tracks) {
     return <TracksTab />;
+  }
+  if (DESKTOP && tab === tabNames.crate) {
+    return <CrateTab />;
   }
   switch (tab) {
     case tabNames.patterns:
