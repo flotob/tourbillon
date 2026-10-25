@@ -1,4 +1,4 @@
-import { PlayIcon, StopIcon } from '@heroicons/react/16/solid';
+import { PlayIcon, PlusIcon, StopIcon, TrashIcon, XMarkIcon } from '@heroicons/react/16/solid';
 import { useStore } from '@nanostores/react';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import cx from '@src/cx.mjs';
@@ -13,8 +13,9 @@ import {
   $tempo,
   PARTS,
   audition,
-  auditionBar,
+  auditionPosition,
   barDuration,
+  barsCode,
   cancelJob,
   clearJobs,
   deleteRecord,
@@ -26,16 +27,7 @@ import {
   versionFor,
 } from './crateStore.mjs';
 
-// bars are at least this wide; short records stretch to the panel
-const MIN_BAR_WIDTH = 4;
-const MAX_BAR_WIDTH = 16;
-const ROW_HEIGHT = 14;
-const RULER_HEIGHT = 14;
-
 const minutes = (seconds) => `${Math.floor(seconds / 60)}:${String(Math.round(seconds % 60)).padStart(2, '0')}`;
-// loud bars are solid, separation bleed is faint
-const opacity = (db) => Math.max(0, Math.min(1, (db + 50) / 40)) ** 1.5;
-const barText = (from, to) => (to - from > 1 ? `bars ${from}–${to - 1} (${to - from})` : `bar ${from}`);
 
 const STEPS = {
   starting: 'starting',
@@ -113,43 +105,75 @@ function Jobs() {
   );
 }
 
-// one row per stem, one column per bar; opacity is loudness
-const BarCells = memo(function BarCells({ record, rows, barWidth }) {
-  return rows.map((stem, row) =>
-    record.levels?.[stem]?.map((db, bar) => (
-      <rect
-        key={`${stem}${bar}`}
-        x={bar * barWidth}
-        y={row * ROW_HEIGHT + 1}
-        width={barWidth - 1}
-        height={ROW_HEIGHT - 2}
-        fill="currentColor"
-        opacity={opacity(db)}
-      />
-    )),
-  );
+// lanes of the stem map, in px; the map is as wide as the panel, whatever the record's length
+const LANE = 20;
+const LANE_GAP = 3;
+// loudness to the share of a lane's height: silence and separation bleed stay flat, loud bars fill the lane
+const level = (db) => Math.max(0, Math.min(1, (db + 50) / 40)) ** 1.5;
+const STEM_HINTS = {
+  mix: 'the original track',
+  drums: 'drums and percussion',
+  bass: 'the bass line',
+  other: 'synths, pads, keys and everything else',
+  vocals: 'voices',
+};
+
+// each stem's loudness per bar as a stepped outline mirrored around the lane's centre, like a waveform
+const Lanes = memo(function Lanes({ record, rows }) {
+  return rows.map((stem, row) => {
+    const levels = record.levels?.[stem] ?? [];
+    const mid = row * LANE + LANE / 2;
+    const half = (LANE - LANE_GAP) / 2;
+    let top = '';
+    let bottom = '';
+    levels.forEach((db, bar) => {
+      const h = level(db) * half;
+      top += `L${bar} ${mid - h}L${bar + 1} ${mid - h}`;
+      bottom = `L${bar + 1} ${mid + h}L${bar} ${mid + h}` + bottom;
+    });
+    return (
+      <g key={stem}>
+        <line
+          x1={0}
+          x2={record.bars}
+          y1={mid}
+          y2={mid}
+          stroke="currentColor"
+          strokeOpacity={0.15}
+          vectorEffect="non-scaling-stroke"
+        />
+        <path
+          d={`M0 ${mid}${top}L${levels.length} ${mid}${bottom}Z`}
+          fill={stem === 'mix' ? 'currentColor' : `var(--stem-${stem})`}
+          fillOpacity={stem === 'mix' ? 0.25 : 0.9}
+        />
+      </g>
+    );
+  });
 });
 
-function Ruler({ bars, y, barWidth }) {
-  const ticks = [];
-  for (let bar = 0; bar <= bars; bar += 8) {
-    const major = bar % 32 === 0;
-    ticks.push(
-      <g key={bar} opacity={0.5}>
-        <line x1={bar * barWidth} x2={bar * barWidth} y1={y} y2={y + (major ? 5 : 3)} stroke="currentColor" />
-        {major && (
-          <text x={bar * barWidth + 2} y={y + RULER_HEIGHT - 2} fontSize={9} fill="currentColor">
-            {bar}
-          </text>
-        )}
-      </g>,
+// phrase lines every 16 bars, stronger every 64
+function Grid({ bars, height }) {
+  const lines = [];
+  for (let bar = 16; bar < bars; bar += 16) {
+    lines.push(
+      <line
+        key={bar}
+        x1={bar}
+        x2={bar}
+        y1={0}
+        y2={height}
+        stroke="currentColor"
+        strokeOpacity={bar % 64 === 0 ? 0.25 : 0.1}
+        vectorEffect="non-scaling-stroke"
+      />,
     );
   }
-  return ticks;
+  return lines;
 }
 
-// the playing bar, moved without re-rendering the cells
-function Cursor({ record, rows, barWidth }) {
+// the bar being listened to, moved every frame without re-rendering the lanes
+function Playhead({ record, height }) {
   const ref = useRef();
   const current = useStore($audition);
   const playing = current?.name === record.name ? current : undefined;
@@ -159,69 +183,55 @@ function Cursor({ record, rows, barWidth }) {
     }
     let frame;
     const move = () => {
-      const bar = auditionBar(playing);
-      ref.current?.setAttribute('x', bar * barWidth - 1);
+      const x = Math.min(record.bars, auditionPosition(playing));
+      ref.current?.setAttribute('x1', x);
+      ref.current?.setAttribute('x2', x);
       frame = requestAnimationFrame(move);
     };
     move();
     return () => cancelAnimationFrame(frame);
-  }, [playing, barWidth]);
+  }, [playing, record.bars]);
   if (!playing) {
     return null;
   }
-  const row = rows.indexOf(playing.stem);
-  return (
-    <rect
-      ref={ref}
-      y={row * ROW_HEIGHT}
-      width={barWidth + 1}
-      height={ROW_HEIGHT}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.5}
-    />
-  );
+  return <line ref={ref} y1={0} y2={height} stroke="currentColor" strokeWidth={2} vectorEffect="non-scaling-stroke" />;
 }
 
 function StopButton() {
   return (
-    <ActionButton
-      label="stop listening (Esc)"
-      labelIsHidden
-      className="flex items-center space-x-1"
-      onClick={stopAudition}
-    >
+    <ActionButton label="Stop listening (Esc)" labelIsHidden className="flex items-center gap-1" onClick={stopAudition}>
       <StopIcon className="w-4 h-4" />
       <span>stop</span>
     </ActionButton>
   );
 }
 
-function BarMap({ record }) {
+function StemMap({ record }) {
   const rows = useMemo(() => ['mix', ...PARTS].filter((stem) => record.stems.includes(stem)), [record]);
   const [drag, setDrag] = useState();
   const [selection, setSelection] = useState();
   const [hover, setHover] = useState();
   const current = useStore($audition);
-  const playing = current?.name === record.name;
-  const height = rows.length * ROW_HEIGHT;
-  const scroller = useRef();
-  const [space, setSpace] = useState(0);
+  const playing = current?.name === record.name ? current : undefined;
+  const height = rows.length * LANE;
+  const box = useRef();
+  const [width, setWidth] = useState(0);
   useEffect(() => {
-    const observer = new ResizeObserver(([entry]) => setSpace(entry.contentRect.width));
-    observer.observe(scroller.current);
+    const observer = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width));
+    observer.observe(box.current);
     return () => observer.disconnect();
   }, []);
-  const barWidth = Math.max(MIN_BAR_WIDTH, Math.min(MAX_BAR_WIDTH, Math.floor(space / record.bars)));
 
   const cellAt = (event) => {
-    const box = event.currentTarget.getBoundingClientRect();
-    const bar = Math.max(0, Math.min(record.bars - 1, Math.floor((event.clientX - box.left) / barWidth)));
-    const row = Math.max(0, Math.min(rows.length - 1, Math.floor((event.clientY - box.top) / ROW_HEIGHT)));
+    const rect = event.currentTarget.getBoundingClientRect();
+    const bar = Math.max(
+      0,
+      Math.min(record.bars - 1, Math.floor(((event.clientX - rect.left) / rect.width) * record.bars)),
+    );
+    const row = Math.max(0, Math.min(rows.length - 1, Math.floor((event.clientY - rect.top) / LANE)));
     return { bar, stem: rows[row] };
   };
   const range = (a, b) => ({ from: Math.min(a, b), to: Math.max(a, b) + 1 });
-
   const onPointerDown = (event) => {
     const { bar, stem } = cellAt(event);
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -234,80 +244,104 @@ function BarMap({ record }) {
       setDrag({ ...drag, end: cell.bar });
     }
   };
-  // a click plays from that bar on, a drag selects bars
+  // a click listens from that bar on, a drag selects bars
   const onPointerUp = (event) => {
     if (!drag) {
       return;
     }
     const { bar } = cellAt(event);
-    setSelection({ stem: drag.stem, ...range(drag.start, bar) });
     if (drag.start === bar) {
+      setSelection(undefined);
       audition(record, drag.stem, bar);
+    } else {
+      setSelection({ stem: drag.stem, ...range(drag.start, bar) });
     }
     setDrag(undefined);
   };
 
-  const shown = drag ? { stem: drag.stem, ...range(drag.start, drag.end) } : selection;
-  let info = 'click a bar to listen from there, drag to select bars';
+  const shown = drag && drag.start !== drag.end ? { stem: drag.stem, ...range(drag.start, drag.end) } : selection;
+  // ruler numbers every 32 bars, or 64 when the map is narrow
+  const step = (width / record.bars) * 32 < 40 ? 64 : 32;
+  const ticks = [];
+  for (let bar = 0; bar < record.bars; bar += step) {
+    ticks.push(bar);
+  }
+
+  let info;
   if (hover) {
-    const db = record.levels?.[hover.stem]?.[hover.bar];
-    info = `${hover.stem} · bar ${hover.bar}${db !== undefined ? ` · ${db} dB` : ''}`;
+    info = (
+      <span title={STEM_HINTS[hover.stem]}>
+        {hover.stem}, bar {hover.bar} at {minutes((record.first_downbeat ?? 0) + hover.bar * barDuration(record))}
+      </span>
+    );
   } else if (playing) {
-    const what = current.loop ? `looping ${barText(current.from, current.to)}` : `from bar ${current.from}`;
-    info = `playing ${current.stem} ${what} · Esc stops`;
+    info = `Listening to ${playing.stem} ${playing.loop ? `bars ${playing.from}–${playing.to - 1} on repeat` : `from bar ${playing.from}`}. Esc stops.`;
   } else if (shown) {
-    info = `${shown.stem} · ${barText(shown.from, shown.to)}`;
+    info = <code>{barsCode(record, shown.stem, shown.from, shown.to).slice(3)}</code>;
+  } else {
+    info = 'Click a bar to listen from there. Drag across bars to select them.';
   }
 
   return (
     <div className="space-y-1">
-      <div className="flex">
-        <div className="shrink-0 w-14 text-xs opacity-60">
+      <div className="flex gap-2">
+        <div className="shrink-0 text-xs text-right opacity-60">
           {rows.map((stem) => (
-            <div key={stem} style={{ height: ROW_HEIGHT, lineHeight: `${ROW_HEIGHT}px` }}>
+            <div key={stem} title={STEM_HINTS[stem]} style={{ height: LANE, lineHeight: `${LANE}px` }}>
               {stem}
             </div>
           ))}
         </div>
-        <div className="overflow-x-auto grow" ref={scroller}>
+        <div className="grow min-w-0" ref={box}>
           <svg
-            width={record.bars * barWidth}
-            height={height + RULER_HEIGHT}
-            className="text-foreground cursor-pointer select-none touch-none"
+            viewBox={`0 0 ${record.bars} ${height}`}
+            preserveAspectRatio="none"
+            width="100%"
+            height={height}
+            className="block text-foreground cursor-pointer select-none touch-none"
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
             onPointerLeave={() => setHover(undefined)}
           >
-            <BarCells record={record} rows={rows} barWidth={barWidth} />
+            <Grid bars={record.bars} height={height} />
+            <Lanes record={record} rows={rows} />
+            {hover && <rect x={hover.bar} width={1} y={0} height={height} fill="currentColor" fillOpacity={0.3} />}
             {shown && (
               <rect
-                x={shown.from * barWidth - 1}
-                y={rows.indexOf(shown.stem) * ROW_HEIGHT}
-                width={(shown.to - shown.from) * barWidth + 1}
-                height={ROW_HEIGHT}
+                x={shown.from}
+                width={shown.to - shown.from}
+                y={rows.indexOf(shown.stem) * LANE}
+                height={LANE}
                 fill="currentColor"
                 fillOpacity={0.2}
                 stroke="currentColor"
-                strokeOpacity={0.8}
+                strokeOpacity={0.9}
+                vectorEffect="non-scaling-stroke"
               />
             )}
-            <Cursor record={record} rows={rows} barWidth={barWidth} />
-            <Ruler bars={record.bars} y={height} barWidth={barWidth} />
+            <Playhead record={record} height={height} />
           </svg>
+          <div className="relative h-4 text-xs opacity-50">
+            {ticks.map((bar) => (
+              <span key={bar} className="absolute" style={{ left: `${(bar / record.bars) * 100}%` }}>
+                {bar}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
-      <div className="flex items-center justify-between space-x-2 text-xs">
+      <div className="flex items-center justify-between gap-3 min-h-6 text-xs">
         <span className="truncate opacity-70">{info}</span>
-        <span className="flex items-center space-x-3 shrink-0">
+        <span className="flex items-center gap-3 shrink-0">
           {playing ? (
             <StopButton />
           ) : (
             selection && (
               <ActionButton
-                label="loop the selected bars"
+                label="Listen to the selected bars on repeat"
                 labelIsHidden
-                className="flex items-center space-x-1"
+                className="flex items-center gap-1"
                 onClick={() => audition(record, selection.stem, selection.from, selection.to, true)}
               >
                 <PlayIcon className="w-4 h-4" />
@@ -317,10 +351,14 @@ function BarMap({ record }) {
           )}
           {selection && (
             <ActionButton
-              label="insert"
-              title="Add code that plays the selected bars to the editor"
+              label="Add code that plays the selected bars to the editor"
+              labelIsHidden
+              className="flex items-center gap-1"
               onClick={() => insertBars(record, selection.stem, selection.from, selection.to)}
-            />
+            >
+              <PlusIcon className="w-4 h-4" />
+              <span>insert</span>
+            </ActionButton>
           )}
         </span>
       </div>
@@ -328,117 +366,162 @@ function BarMap({ record }) {
   );
 }
 
-// versions at other tempos: the crate plays the one closest to the tempo of the code
-function Versions({ record }) {
+// versions at other tempos; the crate plays the one closest to the code's tempo
+function Tempos({ record }) {
   const tempo = useStore($tempo);
   const jobs = useStore($jobs);
-  const [bpm, setBpm] = useState();
+  const [asking, setAsking] = useState(false);
+  const [bpm, setBpm] = useState('');
   const [error, setError] = useState();
   const making = jobs.filter(
     (job) => job.kind === 'tempo' && job.name === record.name && (job.state === 'queued' || job.state === 'running'),
   );
-  const inUse = tempo && versionFor(record, tempo / 240);
+  const inUse = tempo ? (versionFor(record, tempo / 240) ?? record.bpm) : undefined;
+  const has = (value) => sameTempo(value, record.bpm) || record.versions.some((v) => sameTempo(v, value));
   // the code's tempo, when the record needs a version for it
   const suggested =
-    tempo && Math.abs(tempo - record.bpm) > 0.5 && !record.versions.some((v) => sameTempo(v, tempo)) ? tempo : '';
-  const value = bpm ?? String(suggested);
-  const make = async (event) => {
-    event.preventDefault();
+    tempo && Math.abs(tempo - record.bpm) > 0.5 && !has(tempo) && !making.some((job) => sameTempo(job.bpm, tempo))
+      ? tempo
+      : undefined;
+  const make = async (value) => {
     setError(undefined);
     try {
       await makeVersion(record.name, Number(value));
-      setBpm(undefined);
+      setAsking(false);
+      setBpm('');
     } catch (err) {
       setError(errorText(err));
     }
   };
+  const chip = (value, active) =>
+    cx('flex items-center gap-1 px-1.5 rounded', active ? 'bg-lineHighlight font-bold' : 'opacity-70');
+
   return (
-    <div className="flex items-center justify-between space-x-2 text-xs">
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
       <span
-        className="flex flex-wrap items-center gap-x-3"
-        title="Versions at other tempos keep the pitch. When the code plays near one of these tempos, the crate plays that version."
+        className="opacity-50"
+        title="The record plays at these tempos without its pitch changing. When the code runs near one of them, the crate plays that version."
       >
-        <span className="opacity-50">same pitch at</span>
-        {!record.versions.length && !making.length && <span className="opacity-50">no other tempo yet</span>}
-        {record.versions.map((version) => (
-          <span key={version} className={cx('flex items-center', version === inUse ? 'font-bold' : 'opacity-70')}>
-            {version} bpm
-            <button
-              className="ml-1 opacity-50 hover:opacity-100"
-              title={`Delete the ${version} bpm version`}
-              onClick={() => deleteVersion(record.name, version).catch((err) => setError(errorText(err)))}
-            >
-              ×
-            </button>
-          </span>
-        ))}
-        {making.map((job) => (
-          <span key={job.id} className="opacity-50">
-            {job.bpm} bpm…
-          </span>
-        ))}
-        {error && <span className="text-red-400">{error}</span>}
+        Tempos
       </span>
-      <form className="flex items-center space-x-1 shrink-0" onSubmit={make}>
-        <input
-          type="number"
-          step="any"
-          min={Math.ceil(record.bpm / 1.5)}
-          max={Math.floor(record.bpm * 1.5)}
-          placeholder="bpm"
-          className="w-16 px-1 py-0 text-xs bg-background border border-muted rounded"
-          value={value}
-          onChange={(event) => setBpm(event.target.value)}
-        />
-        <ActionButton type="submit" label="make version" disabled={!Number(value)} />
-      </form>
+      <span className={chip(record.bpm, sameTempo(inUse ?? 0, record.bpm))} title="The record's own tempo">
+        {+record.bpm.toFixed(2)} original
+      </span>
+      {record.versions.map((version) => (
+        <span key={version} className={chip(version, version === inUse)}>
+          {version}
+          <button
+            className="opacity-50 hover:opacity-100"
+            title={`Delete the ${version} bpm version`}
+            onClick={() => deleteVersion(record.name, version).catch((err) => setError(errorText(err)))}
+          >
+            <XMarkIcon className="w-3 h-3" />
+          </button>
+        </span>
+      ))}
+      {making.map((job) => (
+        <span key={job.id} className="px-1.5 opacity-50 animate-pulse">
+          {job.bpm} on its way
+        </span>
+      ))}
+      {suggested && !asking && (
+        <ActionButton
+          label={`Make a ${suggested} bpm version, the tempo of the code`}
+          labelIsHidden
+          className="flex items-center gap-0.5"
+          onClick={() => make(suggested)}
+        >
+          <PlusIcon className="w-3 h-3" />
+          <span>{suggested}</span>
+        </ActionButton>
+      )}
+      {asking ? (
+        <form
+          className="flex items-center gap-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            make(bpm);
+          }}
+        >
+          <input
+            autoFocus
+            type="number"
+            step="any"
+            min={Math.ceil(record.bpm / 1.5)}
+            max={Math.floor(record.bpm * 1.5)}
+            placeholder="bpm"
+            className="w-14 px-1 py-0 text-xs bg-background border border-muted rounded [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+            value={bpm}
+            onChange={(event) => setBpm(event.target.value)}
+            onKeyDown={(event) => event.key === 'Escape' && setAsking(false)}
+          />
+          <ActionButton type="submit" label="make" disabled={!Number(bpm)} />
+          <ActionButton type="button" label="cancel" onClick={() => setAsking(false)} />
+        </form>
+      ) : (
+        <ActionButton
+          label="Make a version at another tempo"
+          labelIsHidden
+          className="flex items-center gap-0.5 opacity-70"
+          onClick={() => {
+            setBpm(suggested ? String(suggested) : '');
+            setAsking(true);
+          }}
+        >
+          <PlusIcon className="w-3 h-3" />
+          <span>other</span>
+        </ActionButton>
+      )}
+      {error && <span className="text-red-400">{error}</span>}
     </div>
   );
 }
 
 function Record({ record, open, onToggle }) {
-  const by = record.artist ? ` · ${record.artist}` : '';
   return (
-    <div className={cx('px-2 py-1 rounded', open && 'bg-background')}>
-      <div className="flex items-center justify-between space-x-4">
-        <button className="text-left truncate hover:opacity-50" onClick={onToggle}>
-          <span className="font-bold">{record.name}</span>
-          <span className="opacity-60">
-            {' '}
-            {record.title}
-            {by}
-          </span>
+    <div className={cx('rounded', open ? 'bg-background px-3 py-2 space-y-3' : 'px-3 py-1.5 hover:bg-background')}>
+      <div className="flex items-start justify-between gap-4">
+        <button className="text-left min-w-0" onClick={onToggle} aria-expanded={open}>
+          <div className="truncate font-bold">{record.title}</div>
+          <div className="truncate text-xs opacity-60">
+            {record.artist && <span className="mr-2">{record.artist}</span>}
+            <code
+              className="px-1 rounded bg-lineHighlight"
+              title={`Its sounds are ${record.name}_drums, ${record.name}_bass and so on`}
+            >
+              {record.name}
+            </code>
+          </div>
         </button>
-        <span className="text-xs opacity-50 shrink-0">
-          {+record.bpm.toFixed(2)} bpm
+        <div className="flex items-center gap-3 shrink-0 text-xs pt-0.5">
+          <span className="opacity-80">{+record.bpm.toFixed(2)} bpm</span>
           {record.key && (
-            <span title={`key strength ${record.key_strength}: how clearly the music follows this key`}>
-              {' '}
-              · {record.key} ({record.camelot})
+            <span className="opacity-80" title={`Camelot ${record.camelot}; key strength ${record.key_strength}`}>
+              {record.key} <span className="opacity-60">{record.camelot}</span>
             </span>
-          )}{' '}
-          · {record.bars} bars · {minutes(record.duration)}
-        </span>
-      </div>
-      {open && (
-        <div className="pt-2 space-y-2">
-          <BarMap record={record} />
-          <Versions record={record} />
-          <div className="flex items-center justify-between text-xs">
-            <span className="opacity-50">
-              s("{record.name}_{record.stems.find((stem) => stem !== 'mix') ?? 'mix'}").n(bar) · one bar is{' '}
-              {barDuration(record).toFixed(3)}s
-            </span>
+          )}
+          <span className="opacity-60">{minutes(record.duration)}</span>
+          {open && (
             <ActionButton
-              label="delete"
+              label={`Delete ${record.name} from the crate`}
+              labelIsHidden
+              className="opacity-50 hover:opacity-100"
               onClick={async () => {
-                if (await confirmDialog(`Delete ${record.name} and its stems from the crate?`)) {
+                if (await confirmDialog(`Delete ${record.title} and its stems from the crate?`)) {
                   deleteRecord(record.name);
                 }
               }}
-            />
-          </div>
+            >
+              <TrashIcon className="w-3.5 h-3.5" />
+            </ActionButton>
+          )}
         </div>
+      </div>
+      {open && (
+        <>
+          <StemMap record={record} />
+          <Tempos record={record} />
+        </>
       )}
     </div>
   );
@@ -468,7 +551,7 @@ export function CrateTab() {
         {hidden ? (
           <span className="flex items-center space-x-3 text-xs">
             <span className="opacity-70 truncate">
-              playing {hidden.name}_{hidden.stem}
+              Listening to {hidden.name}_{hidden.stem}
             </span>
             <StopButton />
           </span>

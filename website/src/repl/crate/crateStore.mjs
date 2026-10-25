@@ -203,11 +203,10 @@ export async function audition(record, stem, from, to = record.bars, loop = fals
   await schedule();
 }
 
-// the bar an audition is playing right now
-export function auditionBar(audition) {
-  const elapsed = getAudioContext().currentTime - audition.startTime;
-  const index = Math.max(0, Math.floor(elapsed / audition.barDuration));
-  return audition.loop ? audition.from + (index % (audition.to - audition.from)) : audition.from + index;
+// where an audition is right now, in bars from the start of the record
+export function auditionPosition(audition) {
+  const elapsed = Math.max(0, getAudioContext().currentTime - audition.startTime) / audition.barDuration;
+  return audition.loop ? audition.from + (elapsed % (audition.to - audition.from)) : audition.from + elapsed;
 }
 
 // code that plays bars [from, to) of a stem, one bar per cycle

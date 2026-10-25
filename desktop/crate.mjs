@@ -98,7 +98,8 @@ export function readRecords(crateDir) {
       try {
         const meta = JSON.parse(fs.readFileSync(path.join(crateDir, name, 'record.json'), 'utf8'));
         const summary = Object.fromEntries(SUMMARY_FIELDS.map((field) => [field, meta[field]]));
-        return [{ ...summary, versions: readVersions(path.join(crateDir, name)) }];
+        const first_downbeat = meta.grid?.first_downbeat ?? 0;
+        return [{ ...summary, first_downbeat, versions: readVersions(path.join(crateDir, name)) }];
       } catch {
         return [];
       }

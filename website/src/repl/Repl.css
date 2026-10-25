@@ -204,3 +204,17 @@
 
 .autocomplete-info-tooltip::-webkit-scrollbar-thumb:hover {
 }
+
+/* crate stems, one hue each; checked for colour-blind separation on light and dark themes */
+:root {
+  --stem-drums: #eb6834;
+  --stem-bass: #6250d6;
+  --stem-other: #eda100;
+  --stem-vocals: #2a78d6;
+}
+.dark {
+  --stem-drums: #d95926;
+  --stem-bass: #9085e9;
+  --stem-other: #c98500;
+  --stem-vocals: #3987e5;
+}
