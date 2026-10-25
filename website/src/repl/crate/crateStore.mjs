@@ -99,24 +99,35 @@ export const makeVersion = (name, bpm) => crate.makeVersion(name, bpm);
 export const deleteVersion = (name, bpm) => crate.deleteVersion(name, bpm);
 export const findDrums = (name) => crate.findDrums(name);
 
-// a record's drums.json: every hit as [bar, 16th, velocity, ms off the 16th] per drum
-const drumData = new Map();
-export function loadDrums(record) {
-  const url = `${BASE}${record.name}/drums/drums.json${drumsVersion(record)}`;
-  if (!drumData.has(url)) {
-    drumData.set(
+// a JSON file of a record, fetched once; what names it in the error
+const jsonFiles = new Map();
+function loadJson(url, what) {
+  if (!jsonFiles.has(url)) {
+    jsonFiles.set(
       url,
       fetch(url).then((response) => {
         if (!response.ok) {
-          drumData.delete(url);
-          throw new Error(`the drums of ${record.name} could not be read`);
+          jsonFiles.delete(url);
+          throw new Error(`${what} could not be read`);
         }
         return response.json();
       }),
     );
   }
-  return drumData.get(url);
+  return jsonFiles.get(url);
 }
+
+// a record's drums.json: every hit as [bar, 16th, velocity, ms off the 16th] per drum
+export const loadDrums = (record) =>
+  loadJson(`${BASE}${record.name}/drums/drums.json${drumsVersion(record)}`, `the drums of ${record.name}`);
+
+// a record's outline.json: each stem's loudness in dB per 1/steps of a bar, for the zoomed-in stem map; crate writes
+// it again when it updates the record to a new format
+export const loadOutline = (record) =>
+  loadJson(
+    `${BASE}${record.name}/outline.json?v=${Math.round(record.created_at)}-${record.format}`,
+    `the outline of ${record.name}`,
+  );
 
 // code that plays bars [from, to) of a record's drums as patterns on its kit
 export async function drumsCode(record, from, to) {

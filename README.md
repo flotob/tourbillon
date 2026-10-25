@@ -41,7 +41,9 @@ import sets up its Python environment.
 
 Drop audio files anywhere on the window, or use the crate tab, to import them. Bar n of a stem plays as
 `s("<record>_<stem>").n(n)`, with no `samples()` call needed. The crate tab shows each record's key and where each stem
-plays: click a bar to listen from there (Esc stops), drag to select bars, and insert them as code.
+plays: click a bar to listen from there (Esc stops), drag to select bars, and insert them as code. Pinch on the trackpad
+(or Cmd + scroll wheel) to zoom in and swipe sideways to move along; zoomed in, the map shows each stem's loudness in
+detail, and the drum hits and bass notes crate found. Drag the panel's left edge to make it wider.
 
 A record can get versions at other tempos, stretched without changing pitch (about 3 seconds per minute of music). When
 the code plays near the tempo of a version, the record's sounds play that version instead of the original, so

@@ -25,6 +25,8 @@ import {
   insertBars,
   insertDrums,
   insertNotes,
+  loadDrums,
+  loadOutline,
   makeVersion,
   pickFiles,
   playDrum,
@@ -32,8 +34,23 @@ import {
   versionFor,
 } from './crateStore.mjs';
 import { DRUMS, DRUM_NAMES } from './drumCode.mjs';
+import {
+  clampView,
+  gridLines,
+  isZoomed,
+  lanePath,
+  panView,
+  prepareOutline,
+  resolution,
+  rulerStep,
+  zoomView,
+} from './mapView.mjs';
+import { noteName } from './noteCode.mjs';
 
-const minutes = (seconds) => `${Math.floor(seconds / 60)}:${String(Math.round(seconds % 60)).padStart(2, '0')}`;
+const minutes = (seconds) => {
+  const whole = Math.round(seconds);
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}`;
+};
 
 const STEPS = {
   starting: 'starting',
@@ -133,9 +150,11 @@ function Jobs() {
   );
 }
 
-// lanes of the stem map, in px; the map is as wide as the panel, whatever the record's length
+// lanes of the stem map, in px; the map is as wide as the panel and shows the whole record until zoomed in
 const LANE = 20;
 const LANE_GAP = 3;
+// px per bar from which drum hits and bass notes are drawn over their lanes (a 16th is then 3 px wide)
+const DETAIL = 48;
 // loudness to the share of a lane's height: silence and separation bleed stay flat, loud bars fill the lane
 const level = (db) => Math.max(0, Math.min(1, (db + 50) / 40)) ** 1.5;
 const STEM_HINTS = {
@@ -146,63 +165,102 @@ const STEM_HINTS = {
   vocals: 'voices',
 };
 
-// each stem's loudness per bar as a stepped outline mirrored around the lane's centre, like a waveform
-const Lanes = memo(function Lanes({ record, rows }) {
+// px across the map for a bar, in the view
+const toX = (view, width) => (bar) => ((bar - view.start) / view.bars) * width;
+
+// each stem's loudness as a stepped outline mirrored around the lane's centre, like a waveform: per bar when the
+// whole record is shown, in finer steps (from outline.json) the further the map is zoomed in
+const Lanes = memo(function Lanes({ record, rows, outline, view, width, dimmed }) {
+  const x = toX(view, width);
+  const per = outline ? resolution(width / view.bars, outline.steps) : 1;
+  const half = (LANE - LANE_GAP) / 2;
   return rows.map((stem, row) => {
-    const levels = record.levels?.[stem] ?? [];
+    const detail = outline?.levels[stem];
+    const points = detail ? detail.get(per) : (record.levels?.[stem] ?? []);
     const mid = row * LANE + LANE / 2;
-    const half = (LANE - LANE_GAP) / 2;
-    let top = '';
-    let bottom = '';
-    levels.forEach((db, bar) => {
-      const h = level(db) * half;
-      top += `L${bar} ${mid - h}L${bar + 1} ${mid - h}`;
-      bottom = `L${bar + 1} ${mid + h}L${bar} ${mid + h}` + bottom;
-    });
     return (
       <g key={stem}>
-        <line
-          x1={0}
-          x2={record.bars}
-          y1={mid}
-          y2={mid}
-          stroke="currentColor"
-          strokeOpacity={0.15}
-          vectorEffect="non-scaling-stroke"
-        />
+        <line x1={0} x2={width} y1={mid} y2={mid} stroke="currentColor" strokeOpacity={0.15} />
         <path
-          d={`M0 ${mid}${top}L${levels.length} ${mid}${bottom}Z`}
+          d={lanePath(points, detail ? per : 1, view.start, view.start + view.bars, x, mid, half, level)}
           fill={stem === 'mix' ? 'currentColor' : `var(--stem-${stem})`}
-          fillOpacity={stem === 'mix' ? 0.25 : 0.9}
+          fillOpacity={stem === 'mix' ? 0.25 : dimmed.includes(stem) ? 0.35 : 0.9}
         />
       </g>
     );
   });
 });
 
-// phrase lines every 16 bars, stronger every 64
-function Grid({ bars, height }) {
-  const lines = [];
-  for (let bar = 16; bar < bars; bar += 16) {
-    lines.push(
-      <line
-        key={bar}
-        x1={bar}
-        x2={bar}
-        y1={0}
-        y2={height}
-        stroke="currentColor"
-        strokeOpacity={bar % 64 === 0 ? 0.25 : 0.1}
-        vectorEffect="non-scaling-stroke"
-      />,
-    );
-  }
-  return lines;
+// lines every 16 bars, stronger every 64; every bar and beat when zoomed in
+function Grid({ view, width, height }) {
+  const x = toX(view, width);
+  return gridLines(view.start, view.start + view.bars, width / view.bars).map(({ bar, opacity }) => {
+    const px = Math.round(x(bar)) + 0.5;
+    return <line key={bar} x1={px} x2={px} y1={0} y2={height} stroke="currentColor" strokeOpacity={opacity} />;
+  });
 }
 
-// the bar being listened to, moved every frame without re-rendering the lanes
-function Playhead({ record, height }) {
+// the drum hits crate found, a row per drum from the cymbals at the top to the kick at the bottom, darker when louder
+const DrumHits = memo(function DrumHits({ hits, row, view, width }) {
+  const x = toX(view, width);
+  const sixteenth = width / view.bars / 16;
+  const drums = [...DRUMS].reverse().filter((drum) => hits[drum]?.length);
+  const h = (LANE - LANE_GAP) / drums.length;
+  const top = row * LANE + LANE_GAP / 2;
+  const end = view.start + view.bars;
+  return drums.flatMap((drum, i) =>
+    hits[drum]
+      .filter(([bar, step]) => bar + (step + 1) / 16 > view.start && bar + step / 16 < end)
+      .map(([bar, step, velocity]) => (
+        <rect
+          key={`${drum} ${bar} ${step}`}
+          x={x(bar + step / 16)}
+          width={Math.max(1, sixteenth - 1)}
+          y={top + i * h + 0.5}
+          height={Math.max(1, h - 1)}
+          fill="currentColor"
+          fillOpacity={0.3 + 0.7 * velocity}
+        />
+      )),
+  );
+});
+
+// the bass line as crate transcribed it, higher notes higher up the lane, which spans the notes in view (at least
+// an octave)
+const BassNotes = memo(function BassNotes({ notes, row, view, width }) {
+  const x = toX(view, width);
+  const sixteenth = width / view.bars / 16;
+  const end = view.start + view.bars;
+  const shown = notes.filter(([bar, step, length]) => bar + (step + length) / 16 > view.start && bar + step / 16 < end);
+  if (!shown.length) {
+    return null;
+  }
+  const midis = shown.map((note) => note[3]);
+  const [low, high] = [Math.min(...midis), Math.max(...midis)];
+  // semitones from the top of the lane to the bottom, the notes in the middle
+  const span = Math.max(12, high - low + 1);
+  const highest = high + Math.floor((span - (high - low + 1)) / 2);
+  const h = (LANE - LANE_GAP) / span;
+  const top = row * LANE + LANE_GAP / 2;
+  return shown.map(([bar, step, length, midi]) => (
+    <rect
+      key={`${bar} ${step}`}
+      x={x(bar + step / 16)}
+      width={Math.max(1, length * sixteenth - 1)}
+      y={top + (highest - midi) * h}
+      height={Math.max(2, h - 0.5)}
+      rx={1}
+      fill="currentColor"
+      fillOpacity={0.9}
+    />
+  ));
+});
+
+// the bar being listened to, moved every frame without re-rendering the lanes; onOutside(bar) when it leaves the view
+function Playhead({ record, height, view, width, onOutside }) {
   const ref = useRef();
+  const latest = useRef();
+  latest.current = { view, width, onOutside };
   const current = useStore($audition);
   const playing = current?.name === record.name ? current : undefined;
   useEffect(() => {
@@ -211,7 +269,12 @@ function Playhead({ record, height }) {
     }
     let frame;
     const move = () => {
-      const x = Math.min(record.bars, auditionPosition(playing));
+      const { view, width, onOutside } = latest.current;
+      const bar = Math.min(record.bars, auditionPosition(playing));
+      if (bar < view.start || bar > view.start + view.bars) {
+        onOutside(bar);
+      }
+      const x = toX(view, width)(bar);
       ref.current?.setAttribute('x1', x);
       ref.current?.setAttribute('x2', x);
       frame = requestAnimationFrame(move);
@@ -222,7 +285,53 @@ function Playhead({ record, height }) {
   if (!playing) {
     return null;
   }
-  return <line ref={ref} y1={0} y2={height} stroke="currentColor" strokeWidth={2} vectorEffect="non-scaling-stroke" />;
+  return <line ref={ref} y1={0} y2={height} stroke="currentColor" strokeWidth={2} />;
+}
+
+// the whole record, small, with the part the map shows in a box: click or drag to move there
+function Overview({ record, view, onMove }) {
+  const grab = useRef();
+  const height = 12;
+  const barAt = (event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    return ((event.clientX - rect.left) / rect.width) * record.bars;
+  };
+  return (
+    <svg
+      viewBox={`0 0 ${record.bars} ${height}`}
+      preserveAspectRatio="none"
+      width="100%"
+      height={height}
+      className="block mt-1 text-foreground cursor-grab active:cursor-grabbing select-none touch-none"
+      aria-label="The whole record; click or drag to move the view"
+      onPointerDown={(event) => {
+        const bar = barAt(event);
+        event.currentTarget.setPointerCapture(event.pointerId);
+        // the box moves with the pointer from where it was grabbed, or centres on a click beside it
+        grab.current = bar >= view.start && bar <= view.start + view.bars ? bar - view.start : view.bars / 2;
+        onMove(bar - grab.current);
+      }}
+      onPointerMove={(event) => grab.current !== undefined && onMove(barAt(event) - grab.current)}
+      onPointerUp={() => (grab.current = undefined)}
+    >
+      <path
+        d={lanePath(record.levels?.mix ?? [], 1, 0, record.bars, (bar) => bar, height / 2, height / 2, level)}
+        fill="currentColor"
+        fillOpacity={0.3}
+      />
+      <rect
+        x={view.start}
+        width={view.bars}
+        y={0.5}
+        height={height - 1}
+        fill="currentColor"
+        fillOpacity={0.12}
+        stroke="currentColor"
+        strokeOpacity={0.7}
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
+  );
 }
 
 function StopButton() {
@@ -239,10 +348,14 @@ function StemMap({ record }) {
   const [drag, setDrag] = useState();
   const [selection, setSelection] = useState();
   const [hover, setHover] = useState();
+  const [view, setView] = useState(() => ({ start: 0, bars: record.bars }));
+  const [outline, setOutline] = useState();
+  const [drumHits, setDrumHits] = useState();
   const current = useStore($audition);
   const playing = current?.name === record.name ? current : undefined;
   const height = rows.length * LANE;
   const box = useRef();
+  const map = useRef();
   const [width, setWidth] = useState(0);
   useEffect(() => {
     const observer = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width));
@@ -250,23 +363,140 @@ function StemMap({ record }) {
     return () => observer.disconnect();
   }, []);
 
-  const cellAt = (event) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const bar = Math.max(
-      0,
-      Math.min(record.bars - 1, Math.floor(((event.clientX - rect.left) / rect.width) * record.bars)),
+  useEffect(() => {
+    let active = true;
+    loadOutline(record).then(
+      (data) => active && setOutline(prepareOutline(data)),
+      () => {}, // records made by an older crate have none until they are updated; the map shows bars meanwhile
     );
-    const row = Math.max(0, Math.min(rows.length - 1, Math.floor((event.clientY - rect.top) / LANE)));
-    return { bar, stem: rows[row] };
+    return () => {
+      active = false;
+    };
+  }, [record.name, record.created_at, record.format]);
+  const drumsFound = record.drums?.created_at;
+  useEffect(() => {
+    if (!drumsFound) {
+      return;
+    }
+    let active = true;
+    loadDrums(record).then(
+      (data) => active && setDrumHits(data.hits),
+      (err) => logger(`[crate] ${err.message}`, 'error'),
+    );
+    return () => {
+      active = false;
+    };
+  }, [record.name, drumsFound]);
+
+  // the latest view, size and audition, for handlers that run between renders (wheel, animation frames)
+  const live = useRef();
+  live.current = { view, width, playing };
+  // the view follows the playhead, unless it was moved away from it
+  const follow = useRef(true);
+  useEffect(() => {
+    follow.current = true;
+  }, [playing]);
+  const moveView = (next) => {
+    live.current.view = next;
+    setView(next);
+    if (live.current.playing) {
+      const bar = auditionPosition(live.current.playing);
+      follow.current = bar >= next.start && bar <= next.start + next.bars;
+    }
   };
+  const followPlayhead = (bar) => {
+    if (follow.current) {
+      const { bars } = live.current.view;
+      moveView(clampView({ start: bar - bars / 20, bars }, record.bars));
+    }
+  };
+
+  const cellAt = (clientX, clientY) => {
+    const rect = map.current.getBoundingClientRect();
+    const { view } = live.current;
+    const position = view.start + ((clientX - rect.left) / rect.width) * view.bars;
+    const bar = Math.max(0, Math.min(record.bars - 1, Math.floor(position)));
+    const step = Math.max(0, Math.min(15, Math.floor((position - bar) * 16)));
+    const row = Math.max(0, Math.min(rows.length - 1, Math.floor((clientY - rect.top) / LANE)));
+    return { bar, step, stem: rows[row] };
+  };
+
+  // a pinch on the trackpad (or ctrl / cmd with the scroll wheel) zooms around the pointer, a sideways swipe (or
+  // shift with the scroll wheel) moves along; scrolling up and down still scrolls the panel
+  const onWheel = useRef();
+  onWheel.current = (event) => {
+    const { view, width } = live.current;
+    if (!width) {
+      return;
+    }
+    const rect = map.current.getBoundingClientRect();
+    if (event.ctrlKey || event.metaKey) {
+      event.preventDefault();
+      const anchor = view.start + ((event.clientX - rect.left) / width) * view.bars;
+      const factor = Math.exp(Math.max(-50, Math.min(50, event.deltaY)) / 100);
+      moveView(zoomView(view, record.bars, factor, anchor));
+    } else {
+      const sideways = event.shiftKey && !event.deltaX ? event.deltaY : event.deltaX;
+      if (!isZoomed(view, record.bars) || Math.abs(sideways) <= (event.shiftKey ? 0 : Math.abs(event.deltaY))) {
+        return;
+      }
+      event.preventDefault();
+      moveView(panView(view, record.bars, (sideways / width) * view.bars));
+    }
+    if (event.clientY >= rect.top && event.clientY < rect.bottom) {
+      setHover(cellAt(event.clientX, event.clientY));
+    }
+  };
+  useEffect(() => {
+    const element = box.current;
+    const listener = (event) => onWheel.current(event);
+    element.addEventListener('wheel', listener, { passive: false });
+    return () => element.removeEventListener('wheel', listener);
+  }, []);
+
+  // dragging a selection past either end of the map moves the view along, faster the further past
+  const pointer = useRef();
+  const edgeScroll = useRef();
+  edgeScroll.current = (seconds) => {
+    const rect = map.current?.getBoundingClientRect();
+    const { view, width } = live.current;
+    if (!pointer.current || !rect || !width || !isZoomed(view, record.bars)) {
+      return;
+    }
+    const { x, y } = pointer.current;
+    const over = x < rect.left ? x - rect.left : x > rect.right ? x - rect.right : 0;
+    if (over) {
+      moveView(panView(view, record.bars, (over / width) * view.bars * 6 * seconds));
+      const { bar } = cellAt(x, y);
+      setDrag((drag) => drag && { ...drag, end: bar });
+    }
+  };
+  const dragging = !!drag;
+  useEffect(() => {
+    if (!dragging) {
+      return;
+    }
+    let frame;
+    let last = performance.now();
+    const tick = (now) => {
+      edgeScroll.current(Math.min(0.1, (now - last) / 1000));
+      last = now;
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [dragging]);
+
   const range = (a, b) => ({ from: Math.min(a, b), to: Math.max(a, b) + 1 });
   const onPointerDown = (event) => {
-    const { bar, stem } = cellAt(event);
+    const { bar, stem } = cellAt(event.clientX, event.clientY);
     event.currentTarget.setPointerCapture(event.pointerId);
+    pointer.current = { x: event.clientX, y: event.clientY };
     setDrag({ stem, start: bar, end: bar });
   };
   const onPointerMove = (event) => {
-    const cell = cellAt(event);
+    pointer.current = { x: event.clientX, y: event.clientY };
+    const cell = cellAt(event.clientX, event.clientY);
     setHover(cell);
     if (drag) {
       setDrag({ ...drag, end: cell.bar });
@@ -277,7 +507,7 @@ function StemMap({ record }) {
     if (!drag) {
       return;
     }
-    const { bar } = cellAt(event);
+    const { bar } = cellAt(event.clientX, event.clientY);
     if (drag.start === bar) {
       setSelection(undefined);
       audition(record, drag.stem, bar);
@@ -287,27 +517,52 @@ function StemMap({ record }) {
     setDrag(undefined);
   };
 
+  const x = toX(view, width);
+  const pxPerBar = width / view.bars;
+  const detail = pxPerBar >= DETAIL;
+  const notes = record.notes?.bass?.length ? record.notes.bass : undefined;
+  const dimmed = useMemo(
+    () => (detail ? [drumHits && 'drums', notes && 'bass'].filter(Boolean) : []),
+    [detail, drumHits, notes],
+  );
   const shown = drag && drag.start !== drag.end ? { stem: drag.stem, ...range(drag.start, drag.end) } : selection;
-  // ruler numbers every 32 bars, or 64 when the map is narrow
-  const step = (width / record.bars) * 32 < 40 ? 64 : 32;
   const ticks = [];
-  for (let bar = 0; bar < record.bars; bar += step) {
-    ticks.push(bar);
+  if (width) {
+    const step = rulerStep(pxPerBar);
+    for (let bar = Math.ceil(view.start / step) * step; bar < view.start + view.bars; bar += step) {
+      ticks.push(bar);
+    }
   }
 
   let info;
   if (hover) {
+    const at = hover.bar + (detail ? hover.step / 16 : 0);
+    let here = '';
+    if (detail && hover.stem === 'drums' && drumHits) {
+      const hits = DRUMS.filter((drum) =>
+        drumHits[drum]?.some(([bar, step]) => bar === hover.bar && step === hover.step),
+      );
+      here = hits.length ? `: ${hits.join(' ')}` : '';
+    } else if (detail && hover.stem === 'bass' && notes) {
+      const note = notes.find(
+        ([bar, step, length]) => bar === hover.bar && step <= hover.step && hover.step < step + length,
+      );
+      here = note ? `: ${noteName(note[3], record.key)}` : '';
+    }
     info = (
       <span title={STEM_HINTS[hover.stem]}>
-        {hover.stem}, bar {hover.bar} at {minutes((record.first_downbeat ?? 0) + hover.bar * barDuration(record))}
+        {hover.stem}, bar {hover.bar} at {minutes((record.first_downbeat ?? 0) + at * barDuration(record))}
+        {here}
       </span>
     );
   } else if (playing) {
     info = `Listening to ${playing.stem} ${playing.loop ? `bars ${playing.from}–${playing.to - 1} on repeat` : `from bar ${playing.from}`}. Esc stops.`;
   } else if (shown) {
     info = <code>{barsCode(record, shown.stem, shown.from, shown.to).slice(3)}</code>;
+  } else if (isZoomed(view, record.bars)) {
+    info = 'Swipe sideways to move along. Pinch out to see the whole record.';
   } else {
-    info = 'Click a bar to listen from there. Drag across bars to select them.';
+    info = 'Click a bar to listen from there. Drag across bars to select them. Pinch to zoom in.';
   }
 
   return (
@@ -322,9 +577,9 @@ function StemMap({ record }) {
         </div>
         <div className="grow min-w-0" ref={box}>
           <svg
-            viewBox={`0 0 ${record.bars} ${height}`}
-            preserveAspectRatio="none"
-            width="100%"
+            ref={map}
+            viewBox={`0 0 ${width} ${height}`}
+            width={width}
             height={height}
             className="block text-foreground cursor-pointer select-none touch-none"
             onPointerDown={onPointerDown}
@@ -332,31 +587,62 @@ function StemMap({ record }) {
             onPointerUp={onPointerUp}
             onPointerLeave={() => setHover(undefined)}
           >
-            <Grid bars={record.bars} height={height} />
-            <Lanes record={record} rows={rows} />
-            {hover && <rect x={hover.bar} width={1} y={0} height={height} fill="currentColor" fillOpacity={0.3} />}
+            <Grid view={view} width={width} height={height} />
+            <Lanes record={record} rows={rows} outline={outline} view={view} width={width} dimmed={dimmed} />
+            {detail && drumHits && rows.includes('drums') && (
+              <DrumHits hits={drumHits} row={rows.indexOf('drums')} view={view} width={width} />
+            )}
+            {detail && notes && rows.includes('bass') && (
+              <BassNotes notes={notes} row={rows.indexOf('bass')} view={view} width={width} />
+            )}
+            {hover && (
+              <rect
+                x={x(hover.bar)}
+                width={pxPerBar}
+                y={0}
+                height={height}
+                fill="currentColor"
+                fillOpacity={detail ? 0.12 : 0.3}
+              />
+            )}
+            {hover && detail && (
+              <rect
+                x={x(hover.bar + hover.step / 16)}
+                width={pxPerBar / 16}
+                y={rows.indexOf(hover.stem) * LANE}
+                height={LANE}
+                fill="currentColor"
+                fillOpacity={0.25}
+              />
+            )}
             {shown && (
               <rect
-                x={shown.from}
-                width={shown.to - shown.from}
-                y={rows.indexOf(shown.stem) * LANE}
-                height={LANE}
+                x={Math.round(x(shown.from)) + 0.5}
+                width={Math.max(1, Math.round((shown.to - shown.from) * pxPerBar) - 1)}
+                y={rows.indexOf(shown.stem) * LANE + 0.5}
+                height={LANE - 1}
                 fill="currentColor"
                 fillOpacity={0.2}
                 stroke="currentColor"
                 strokeOpacity={0.9}
-                vectorEffect="non-scaling-stroke"
               />
             )}
-            <Playhead record={record} height={height} />
+            <Playhead record={record} height={height} view={view} width={width} onOutside={followPlayhead} />
           </svg>
-          <div className="relative h-4 text-xs opacity-50">
+          <div className="relative h-4 text-xs opacity-50 overflow-hidden">
             {ticks.map((bar) => (
-              <span key={bar} className="absolute" style={{ left: `${(bar / record.bars) * 100}%` }}>
+              <span key={bar} className="absolute" style={{ left: x(bar) }}>
                 {bar}
               </span>
             ))}
           </div>
+          {isZoomed(view, record.bars) && (
+            <Overview
+              record={record}
+              view={view}
+              onMove={(start) => moveView(clampView({ start, bars: view.bars }, record.bars))}
+            />
+          )}
         </div>
       </div>
       <div className="flex items-center justify-between gap-3 min-h-6 text-xs">

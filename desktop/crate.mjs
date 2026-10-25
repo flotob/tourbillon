@@ -18,8 +18,9 @@ export const crateScheme = {
 
 export const AUDIO_EXTENSIONS = ['mp3', 'flac', 'wav', 'aif', 'aiff', 'm4a', 'aac', 'ogg', 'opus'];
 const RECORD_NAME = /^[a-z][a-z0-9]*$/;
-// the record.json layout this app expects (3 added the bass notes); older records are updated with `crate analyze`
-const FORMAT = 3;
+// the record.json layout this app expects (3 added the bass notes, 4 outline.json); older records are updated with
+// `crate analyze`
+const FORMAT = 4;
 // how far a version's tempo may be from the record's, as crate allows
 const MAX_RATIO = 1.5;
 // what the renderer and the agent get; beats and the source path stay on disk

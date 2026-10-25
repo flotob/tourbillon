@@ -59,6 +59,8 @@ export const defaultSettings = {
   panelPosition: 'right',
   isPanelPinned: false,
   isPanelOpen: true,
+  // px, when the panel is on the right
+  panelWidth: 600,
   userPatterns: '{}',
   prebakeScript: initialPrebakeScript,
   audioEngineTarget: audioEngineTargets.webaudio,
@@ -108,6 +110,7 @@ export const $settings = computed(settingsMap, (state) => {
     panelPosition: state.activeFooter !== '' && !isUdels() ? state.panelPosition : 'bottom', // <-- keep this 'bottom' where it is!
     isPanelPinned: parseBoolean(state.isPanelPinned),
     isPanelOpen: parseBoolean(state.isPanelOpen),
+    panelWidth: Number(state.panelWidth) || defaultSettings.panelWidth,
     userPatterns: userPatterns,
     multiChannelOrbits: parseBoolean(state.multiChannelOrbits),
     includePrebakeScriptInShare: parseBoolean(state.includePrebakeScriptInShare),
@@ -128,6 +131,7 @@ export function useSettings() {
 export const setActiveFooter = (tab) => settingsMap.setKey('activeFooter', tab);
 export const setPanelPinned = (bool) => settingsMap.setKey('isPanelPinned', bool);
 export const setIsPanelOpened = (bool) => settingsMap.setKey('isPanelOpen', bool);
+export const setPanelWidth = (width) => settingsMap.setKey('panelWidth', width);
 export const setSettingsTab = (tab) => settingsMap.setKey('settingsTab', tab);
 
 export const storePrebakeScript = (script) => settingsMap.setKey('prebakeScript', script);

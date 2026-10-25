@@ -1,7 +1,16 @@
 import { Bars3Icon, PlayIcon, StopIcon, XMarkIcon } from '@heroicons/react/16/solid';
 import cx from '@src/cx.mjs';
 import { StrudelIcon } from '@src/repl/components/icons/StrudelIcon';
-import { settingsMap, useSettings, setIsZen, setIsPanelOpened, setActiveFooter as setTab } from '../../../settings.mjs';
+import { useRef, useState } from 'react';
+import {
+  defaultSettings,
+  settingsMap,
+  useSettings,
+  setIsZen,
+  setIsPanelOpened,
+  setPanelWidth,
+  setActiveFooter as setTab,
+} from '../../../settings.mjs';
 import '../../Repl.css';
 import { useLogger } from '../useLogger';
 import { ConsoleTab } from './ConsoleTab';
@@ -206,20 +215,62 @@ export function BottomPanel({ context }) {
   );
 }
 
+// the right panel is at least this wide, and at most 80% of the window
+const MIN_PANEL_WIDTH = 360;
+
+// the right panel's left edge: drag it to make the panel wider or narrower, double click for the usual width
+function PanelEdge({ onDrag, onDone }) {
+  const start = useRef();
+  const widthAt = (event) =>
+    Math.round(
+      Math.max(
+        MIN_PANEL_WIDTH,
+        Math.min(window.innerWidth * 0.8, start.current.width + start.current.x - event.clientX),
+      ),
+    );
+  return (
+    <div
+      role="separator"
+      aria-orientation="vertical"
+      title="Drag to resize the panel, double click for the usual width"
+      className="absolute left-0 top-0 bottom-0 z-10 w-1.5 cursor-col-resize hover:bg-muted active:bg-muted"
+      onPointerDown={(event) => {
+        event.currentTarget.setPointerCapture(event.pointerId);
+        start.current = { x: event.clientX, width: event.currentTarget.parentElement.getBoundingClientRect().width };
+      }}
+      onPointerMove={(event) => start.current && onDrag(widthAt(event))}
+      onPointerUp={(event) => {
+        if (start.current) {
+          onDone(widthAt(event));
+          start.current = undefined;
+        }
+      }}
+      onDoubleClick={() => onDone(defaultSettings.panelWidth)}
+    />
+  );
+}
+
 export function RightPanel({ context }) {
   const settings = useSettings();
-  const { activeFooter: tab, isPanelOpen } = settings;
+  const { activeFooter: tab, isPanelOpen, panelWidth } = settings;
+  // the width while the edge is dragged; stored when it is let go
+  const [dragWidth, setDragWidth] = useState();
   if (!isPanelOpen) {
     return;
   }
   return (
     <PanelNav
       settings={settings}
-      className={cx(
-        'border-l border-muted shrink-0 h-full overflow-hidden',
-        isPanelOpen ? `min-w-[min(600px,100vw)] max-w-[min(600px,80vw)]` : 'min-w-12 max-w-12',
-      )}
+      className="border-l border-muted shrink-0 h-full overflow-hidden relative"
+      style={{ width: `min(${dragWidth ?? panelWidth}px, 80vw)`, minWidth: `min(${MIN_PANEL_WIDTH}px, 100vw)` }}
     >
+      <PanelEdge
+        onDrag={setDragWidth}
+        onDone={(width) => {
+          setDragWidth(undefined);
+          setPanelWidth(width);
+        }}
+      />
       <div className={cx('flex flex-col h-full')}>
         <div className="flex justify-between w-full overflow-hidden border-b border-muted min-h-10 max-h-10">
           <PanelCloseButton />
