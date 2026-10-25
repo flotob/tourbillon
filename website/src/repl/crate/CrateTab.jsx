@@ -171,6 +171,20 @@ function Cursor({ record, rows, barWidth }) {
   );
 }
 
+function StopButton() {
+  return (
+    <ActionButton
+      label="stop listening (Esc)"
+      labelIsHidden
+      className="flex items-center space-x-1"
+      onClick={stopAudition}
+    >
+      <StopIcon className="w-4 h-4" />
+      <span>stop</span>
+    </ActionButton>
+  );
+}
+
 function BarMap({ record }) {
   const rows = useMemo(() => ['mix', ...PARTS].filter((stem) => record.stems.includes(stem)), [record]);
   const [drag, setDrag] = useState();
@@ -226,6 +240,9 @@ function BarMap({ record }) {
   if (hover) {
     const db = record.levels?.[hover.stem]?.[hover.bar];
     info = `${hover.stem} · bar ${hover.bar}${db !== undefined ? ` · ${db} dB` : ''}`;
+  } else if (playing) {
+    const what = current.loop ? `looping ${barText(current.from, current.to)}` : `from bar ${current.from}`;
+    info = `playing ${current.stem} ${what} · Esc stops`;
   } else if (shown) {
     info = `${shown.stem} · ${barText(shown.from, shown.to)}`;
   }
@@ -272,17 +289,17 @@ function BarMap({ record }) {
         <span className="truncate opacity-70">{info}</span>
         <span className="flex items-center space-x-3 shrink-0">
           {playing ? (
-            <ActionButton label="stop" labelIsHidden onClick={stopAudition}>
-              <StopIcon className="w-4 h-4" />
-            </ActionButton>
+            <StopButton />
           ) : (
             selection && (
               <ActionButton
-                label="loop selection"
+                label="loop the selected bars"
                 labelIsHidden
+                className="flex items-center space-x-1"
                 onClick={() => audition(record, selection.stem, selection.from, selection.to, true)}
               >
                 <PlayIcon className="w-4 h-4" />
+                <span>loop</span>
               </ActionButton>
             )
           )}
@@ -352,12 +369,24 @@ export function CrateTab() {
   }, [records, search]);
   // the newest record is open until one is picked
   const open = openName === undefined ? records[0] : records.find((r) => r.name === openName);
+  // a preview of a closed record can still be stopped here
+  const current = useStore($audition);
+  const hidden = current && current.name !== open?.name ? current : undefined;
 
   return (
     <div className="w-full h-full text-foreground flex flex-col overflow-hidden">
-      <div className="px-2 shrink-0 h-8 flex items-center justify-between border-b border-muted">
+      <div className="px-2 shrink-0 h-8 flex items-center justify-between space-x-2 border-b border-muted">
         <ActionButton label="import…" onClick={pickFiles} disabled={!!status?.problem} />
-        <span className="text-xs opacity-50">or drop audio files anywhere in the window</span>
+        {hidden ? (
+          <span className="flex items-center space-x-3 text-xs">
+            <span className="opacity-70 truncate">
+              playing {hidden.name}_{hidden.stem}
+            </span>
+            <StopButton />
+          </span>
+        ) : (
+          <span className="text-xs opacity-50">or drop audio files anywhere in the window</span>
+        )}
       </div>
       {status?.problem && <div className="p-2 text-xs text-red-400">{status.problem}</div>}
       <Jobs />

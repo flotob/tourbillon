@@ -80,6 +80,17 @@ export function initCrate() {
       registerCrateSounds(event.records);
     }
   });
+  // Escape stops a preview from anywhere, Space too unless it types or presses a button
+  const typing = (target) => target.isContentEditable || /^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(target.tagName);
+  window.addEventListener('keydown', (event) => {
+    if (!$audition.get() || event.defaultPrevented) {
+      return;
+    }
+    if (event.key === 'Escape' || (event.key === ' ' && !typing(event.target))) {
+      event.preventDefault();
+      stopAudition();
+    }
+  });
   // audio files dropped anywhere on the window go into the crate, instead of the window navigating to them
   const hasFiles = (event) => event.dataTransfer?.types.includes('Files');
   window.addEventListener(
