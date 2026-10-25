@@ -17,5 +17,5 @@ with AI assistance.
 Sample libraries loaded at runtime are hosted by third parties and keep their own licenses.
 
 The crate feature runs [crate](https://github.com/flotob/tourbillon-crate), a separate AGPL-3.0-or-later project that
-uses Demucs and Beat This! (MIT). Records in the crate are derived from the user's own audio files and stay on their
+uses Demucs and Beat This! (MIT), Essentia (AGPL-3.0) and the Rubber Band command line program (GPL-2.0-or-later). Records in the crate are derived from the user's own audio files and stay on their
 machine; only import music you have the rights to use.

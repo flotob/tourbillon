@@ -2,7 +2,8 @@
 // bars can be auditioned and inserted as code. Records are made by the crate project, run by the main process.
 import { isolateHistory } from '@codemirror/commands';
 import { EditorView } from '@codemirror/view';
-import { getAudioContext, loadBuffer, samples, soundMap } from '@strudel/webaudio';
+import { logger } from '@strudel/core';
+import { getAudioContext, loadBuffer, onTriggerSample, registerSound, soundMap } from '@strudel/webaudio';
 import { atom } from 'nanostores';
 import { setActiveFooter, setIsPanelOpened } from '../../settings.mjs';
 
@@ -15,33 +16,56 @@ export const $records = atom([]);
 export const $jobs = atom([]);
 // the bars being auditioned: { name, stem, from, to, loop, startTime, barDuration }
 export const $audition = atom();
+// the tempo the code plays at, in bpm with one bar per cycle; known after the first evaluation
+export const $tempo = atom();
+export const setTempo = (cps) => $tempo.set(Math.round(cps * 240 * 100) / 100);
 
 export const barDuration = (record) => 240 / record.bpm;
 
+// a bar of a stem, at the record's own tempo or from its version at bpm;
 // created_at keeps a re-imported record from playing cached audio of the old one
-const barPath = (record, stem, bar) =>
-  `${record.name}/bars/${stem}/${String(bar).padStart(3, '0')}.flac?v=${Math.round(record.created_at)}`;
+const barPath = (record, stem, bar, bpm) =>
+  `${record.name}/${bpm ? `tempo/${bpm}` : 'bars'}/${stem}/${String(bar).padStart(3, '0')}.flac?v=${Math.round(record.created_at)}`;
+const barUrls = (record, stem, bpm) =>
+  Array.from({ length: record.bars }, (_, bar) => BASE + barPath(record, stem, bar, bpm));
+
+// the version to play at cps with one bar per cycle: the one closest in tempo, unless the record itself is closer
+export function versionFor(record, cps) {
+  if (!cps || !record.versions?.length) {
+    return undefined;
+  }
+  const distance = (bpm) => Math.abs(Math.log((cps * 240) / bpm));
+  const closest = record.versions.reduce((a, b) => (distance(b) < distance(a) ? b : a));
+  return distance(closest) < distance(record.bpm) ? closest : undefined;
+}
 
 let registered = new Set();
 
+// each stem is a sample sound whose bars come from the version closest to the tempo it is played at, so a record
+// keeps its pitch at every tempo it has a version for; .fit() covers what is left
 export async function registerCrateSounds(records) {
   if (!crate) {
     return;
   }
   records ??= await crate.records();
-  const sounds = {};
+  const keys = new Set();
   for (const record of records) {
     for (const stem of record.stems) {
-      sounds[`${record.name}_${stem}`] = Array.from({ length: record.bars }, (_, bar) => barPath(record, stem, bar));
+      const key = `${record.name}_${stem}`;
+      const original = barUrls(record, stem);
+      const versions = new Map(record.versions.map((bpm) => [bpm, barUrls(record, stem, bpm)]));
+      const onTrigger = (t, value, onended, cps) =>
+        onTriggerSample(t, value, onended, versions.get(versionFor(record, cps)) ?? original);
+      registerSound(key, onTrigger, { type: 'sample', samples: original, baseUrl: BASE, prebake: true, tag: 'crate' });
+      keys.add(key);
     }
   }
   for (const key of registered) {
-    if (!(key in sounds)) {
+    if (!keys.has(key)) {
       soundMap.setKey(key, undefined);
     }
   }
-  registered = new Set(Object.keys(sounds));
-  await samples(sounds, BASE, { prebake: true, tag: 'crate' });
+  registered = keys;
   $records.set(records);
 }
 
@@ -56,6 +80,9 @@ export async function importFiles(files) {
 export const pickFiles = () => crate.pick();
 export const cancelJob = (id) => crate.cancel(id);
 export const clearJobs = () => crate.clearJobs();
+
+export const makeVersion = (name, bpm) => crate.makeVersion(name, bpm);
+export const deleteVersion = (name, bpm) => crate.deleteVersion(name, bpm);
 
 export async function deleteRecord(name) {
   if ($audition.get()?.name === name) {
@@ -206,10 +233,11 @@ export function insertBars(record, stem, from, to) {
     lines.push(`setcpm(${bpm}/4) // the tempo of ${record.name}: one cycle is one bar`);
   }
   let line = barsCode(record, stem, from, to);
-  const cpm = editor.repl.scheduler.cps * 60;
-  if (lines.length === 0 && Math.abs(cpm * 4 - bpm) > 0.5) {
-    // fit stretches each bar to a cycle, which shifts its pitch like a turntable
+  const tempo = Math.round(editor.repl.scheduler.cps * 240 * 100) / 100;
+  if (lines.length === 0 && Math.abs(tempo - bpm) > 0.5) {
+    // fit stretches each bar to a cycle, which shifts its pitch like a turntable; a version at this tempo keeps it
     line += `.fit() // ${record.name} is ${bpm} bpm`;
+    makeVersion(record.name, tempo).catch((err) => logger(`[crate] ${err.message}`, 'error'));
   }
   lines.push(line);
   const prefix = code.length === 0 || code.endsWith('\n\n') ? '' : code.endsWith('\n') ? '\n' : '\n\n';

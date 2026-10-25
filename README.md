@@ -40,10 +40,15 @@ locally. Clone it next to this repository as `crate` and install [uv](https://do
 import sets up its Python environment.
 
 Drop audio files anywhere on the window, or use the crate tab, to import them. Bar n of a stem plays as
-`s("<record>_<stem>").n(n)`, with no `samples()` call needed. The crate tab shows where each stem plays: click a bar to
-listen from there, drag to select bars, and insert them as code. The agent can look up records with `list_records` and
-`get_record`. Records are stored in `~/Library/Application Support/Tourbillon/crate` and served to the audio engine via
-`crate://` ([desktop/crate.mjs](desktop/crate.mjs)).
+`s("<record>_<stem>").n(n)`, with no `samples()` call needed. The crate tab shows each record's key and where each stem
+plays: click a bar to listen from there (Esc stops), drag to select bars, and insert them as code.
+
+A record can get versions at other tempos, stretched without changing pitch (about 3 seconds per minute of music). When
+the code plays near the tempo of a version, the record's sounds play that version instead of the original, so
+`.fit()` no longer shifts the pitch. Inserting bars at another tempo makes that version; the crate tab can make
+others. The agent can look up records with `list_records` and `get_record` and make versions with
+`make_tempo_version`. Records are stored in `~/Library/Application Support/Tourbillon/crate` and served to the audio
+engine via `crate://` ([desktop/crate.mjs](desktop/crate.mjs)).
 
 For development:
 

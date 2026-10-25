@@ -33,6 +33,9 @@ contextBridge.exposeInMainWorld('tourbillon', {
     cancel: (jobId) => ipcRenderer.invoke('crate:cancel', jobId),
     clearJobs: () => ipcRenderer.invoke('crate:clear-jobs'),
     remove: (name) => ipcRenderer.invoke('crate:delete', name),
+    // a version of a record at another tempo, same pitch
+    makeVersion: (name, bpm) => ipcRenderer.invoke('crate:make-version', name, bpm),
+    deleteVersion: (name, bpm) => ipcRenderer.invoke('crate:delete-version', name, bpm),
     pathForFile: (file) => webUtils.getPathForFile(file),
     // { type: 'jobs', jobs } and { type: 'records', records }
     onEvent(callback) {

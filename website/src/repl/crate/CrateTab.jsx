@@ -10,6 +10,7 @@ import {
   $jobs,
   $records,
   $status,
+  $tempo,
   PARTS,
   audition,
   auditionBar,
@@ -17,9 +18,12 @@ import {
   cancelJob,
   clearJobs,
   deleteRecord,
+  deleteVersion,
   insertBars,
+  makeVersion,
   pickFiles,
   stopAudition,
+  versionFor,
 } from './crateStore.mjs';
 
 // bars are at least this wide; short records stretch to the panel
@@ -39,10 +43,15 @@ const STEPS = {
   separating: 'separating stems',
   beats: 'finding the beat',
   writing: 'cutting bars',
+  stretching: 'stretching, same pitch',
+  analyzing: 'finding the key',
 };
-// share of the whole import that each step ends at
-const STEP_END = { starting: 0, installing: 0, separating: 0.8, beats: 0.85, writing: 1 };
-const STEP_START = { separating: 0, beats: 0.8, writing: 0.85 };
+// share of the whole job that each step starts and ends at; imports separate, versions stretch, then both write
+const STEP_START = { separating: 0, beats: 0.8, stretching: 0, writing: 0.85, analyzing: 0 };
+const STEP_END = { separating: 0.8, beats: 0.85, stretching: 0.85, writing: 1, analyzing: 1 };
+// ipc errors arrive as "Error invoking remote method 'crate:…': Error: <message>"
+const errorText = (err) => err.message.replace(/^Error invoking remote method '[^']+': (Error: )?/, '');
+const sameTempo = (a, b) => Math.abs(a - b) < 0.005;
 
 function jobProgress(job) {
   if (!(job.step in STEP_START)) {
@@ -58,7 +67,10 @@ function jobText(job) {
     case 'running':
       return STEPS[job.step] ?? job.step;
     case 'done':
-      return job.existing ? `already in the crate as ${job.name}` : `added as ${job.name}`;
+      if (job.kind === 'add') {
+        return job.existing ? `already in the crate as ${job.name}` : `added as ${job.name}`;
+      }
+      return job.existing ? 'there already' : 'done';
     case 'cancelled':
       return 'cancelled';
     default:
@@ -316,6 +328,74 @@ function BarMap({ record }) {
   );
 }
 
+// versions at other tempos: the crate plays the one closest to the tempo of the code
+function Versions({ record }) {
+  const tempo = useStore($tempo);
+  const jobs = useStore($jobs);
+  const [bpm, setBpm] = useState();
+  const [error, setError] = useState();
+  const making = jobs.filter(
+    (job) => job.kind === 'tempo' && job.name === record.name && (job.state === 'queued' || job.state === 'running'),
+  );
+  const inUse = tempo && versionFor(record, tempo / 240);
+  // the code's tempo, when the record needs a version for it
+  const suggested =
+    tempo && Math.abs(tempo - record.bpm) > 0.5 && !record.versions.some((v) => sameTempo(v, tempo)) ? tempo : '';
+  const value = bpm ?? String(suggested);
+  const make = async (event) => {
+    event.preventDefault();
+    setError(undefined);
+    try {
+      await makeVersion(record.name, Number(value));
+      setBpm(undefined);
+    } catch (err) {
+      setError(errorText(err));
+    }
+  };
+  return (
+    <div className="flex items-center justify-between space-x-2 text-xs">
+      <span
+        className="flex flex-wrap items-center gap-x-3"
+        title="Versions at other tempos keep the pitch. When the code plays near one of these tempos, the crate plays that version."
+      >
+        <span className="opacity-50">same pitch at</span>
+        {!record.versions.length && !making.length && <span className="opacity-50">no other tempo yet</span>}
+        {record.versions.map((version) => (
+          <span key={version} className={cx('flex items-center', version === inUse ? 'font-bold' : 'opacity-70')}>
+            {version} bpm
+            <button
+              className="ml-1 opacity-50 hover:opacity-100"
+              title={`Delete the ${version} bpm version`}
+              onClick={() => deleteVersion(record.name, version).catch((err) => setError(errorText(err)))}
+            >
+              ×
+            </button>
+          </span>
+        ))}
+        {making.map((job) => (
+          <span key={job.id} className="opacity-50">
+            {job.bpm} bpm…
+          </span>
+        ))}
+        {error && <span className="text-red-400">{error}</span>}
+      </span>
+      <form className="flex items-center space-x-1 shrink-0" onSubmit={make}>
+        <input
+          type="number"
+          step="any"
+          min={Math.ceil(record.bpm / 1.5)}
+          max={Math.floor(record.bpm * 1.5)}
+          placeholder="bpm"
+          className="w-16 px-1 py-0 text-xs bg-background border border-muted rounded"
+          value={value}
+          onChange={(event) => setBpm(event.target.value)}
+        />
+        <ActionButton type="submit" label="make version" disabled={!Number(value)} />
+      </form>
+    </div>
+  );
+}
+
 function Record({ record, open, onToggle }) {
   const by = record.artist ? ` · ${record.artist}` : '';
   return (
@@ -330,12 +410,20 @@ function Record({ record, open, onToggle }) {
           </span>
         </button>
         <span className="text-xs opacity-50 shrink-0">
-          {+record.bpm.toFixed(2)} bpm · {record.bars} bars · {minutes(record.duration)}
+          {+record.bpm.toFixed(2)} bpm
+          {record.key && (
+            <span title={`key strength ${record.key_strength}: how clearly the music follows this key`}>
+              {' '}
+              · {record.key} ({record.camelot})
+            </span>
+          )}{' '}
+          · {record.bars} bars · {minutes(record.duration)}
         </span>
       </div>
       {open && (
         <div className="pt-2 space-y-2">
           <BarMap record={record} />
+          <Versions record={record} />
           <div className="flex items-center justify-between text-xs">
             <span className="opacity-50">
               s("{record.name}_{record.stems.find((stem) => stem !== 'mix') ?? 'mix'}").n(bar) · one bar is{' '}

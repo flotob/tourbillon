@@ -20,8 +20,19 @@ function describeRecord(record, { levels = false } = {}) {
   const lines = [
     `${record.name}: "${record.title}"${by}`,
     `${+record.bpm.toFixed(2)} bpm, ${record.bars} bars (0-${record.bars - 1}) of ${(240 / record.bpm).toFixed(3)}s, ${minutes(record.duration)}`,
-    `sounds: ${record.stems.map((stem) => `${record.name}_${stem}`).join(', ')}`,
   ];
+  if (record.key) {
+    const [tonic, scale] = record.key.split(' ');
+    lines.push(
+      `key ${record.key} (Camelot ${record.camelot}, strength ${record.key_strength}); in strudel .scale("${tonic}:${scale}")`,
+    );
+  }
+  lines.push(
+    record.versions?.length
+      ? `versions with the same pitch at ${record.versions.join(', ')} bpm`
+      : 'no versions at other tempos',
+    `sounds: ${record.stems.map((stem) => `${record.name}_${stem}`).join(', ')}`,
+  );
   if (record.playing) {
     lines.push(...parts.map((stem) => `${stem} plays in bars ${barRanges(record.playing[stem])}`));
   }
@@ -168,7 +179,7 @@ export function createTools({ callRenderer, knowledge, crate }) {
     name: 'list_records',
     label: 'List records',
     description:
-      "Lists the records in the user's crate (tracks separated into stems and cut into bars): name, title, tempo, bars and where each stem plays.",
+      "Lists the records in the user's crate (tracks separated into stems and cut into bars): name, title, tempo, key, versions at other tempos, bars and where each stem plays.",
     parameters: Type.Object({}),
     async execute() {
       const records = crate?.records() ?? [];
@@ -183,7 +194,7 @@ export function createTools({ callRenderer, knowledge, crate }) {
     name: 'get_record',
     label: 'Read record',
     description:
-      'Returns one record of the crate: tempo, bar count, sound names, the bar ranges where each stem plays, and the loudness of each stem per bar.',
+      'Returns one record of the crate: tempo, key, versions at other tempos, bar count, sound names, the bar ranges where each stem plays, and the loudness of each stem per bar.',
     parameters: Type.Object({ name: Type.String({ description: 'Record name, e.g. "nataalma"' }) }),
     async execute(_toolCallId, { name }) {
       const records = crate?.records() ?? [];
@@ -195,5 +206,30 @@ export function createTools({ callRenderer, knowledge, crate }) {
     },
   });
 
-  return [...editorTools, searchDocs, getFunction, readDoc, listRecords, getRecord];
+  const makeTempoVersion = defineTool({
+    name: 'make_tempo_version',
+    label: 'Make tempo version',
+    description:
+      "Makes a version of a record at another tempo with the same pitch, in the background (about 3 seconds per minute of the record). Once it exists, the record's sounds play it whenever the code runs near that tempo; until then they play the original.",
+    parameters: Type.Object({
+      name: Type.String({ description: 'Record name, e.g. "nataalma"' }),
+      bpm: Type.Number({ description: 'The tempo of the code, e.g. 124 for setcpm(124/4)' }),
+    }),
+    async execute(_toolCallId, { name: given, bpm }) {
+      if (!crate) {
+        throw new Error('The crate is not available.');
+      }
+      const name = given.trim().toLowerCase();
+      const { state } = crate.makeVersion(name, bpm);
+      const messages = {
+        original: `${name} is ${bpm} bpm already; no version is needed.`,
+        exists: `${name} has a version at ${bpm} bpm already.`,
+        queued: `The ${bpm} bpm version of ${name} is queued; the crate tab shows its progress.`,
+        running: `The ${bpm} bpm version of ${name} is being made; the crate tab shows its progress.`,
+      };
+      return text(messages[state]);
+    },
+  });
+
+  return [...editorTools, searchDocs, getFunction, readDoc, listRecords, getRecord, makeTempoVersion];
 }
